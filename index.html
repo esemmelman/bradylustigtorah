@@ -55,9 +55,10 @@
     .studio-button { right: 12px; background: #294e6f; }
     .audio-toggle { left: 12px; background: #2f7a4a; }
     .audio-toggle[aria-pressed="false"] { background: #687078; }
-    dialog { width: min(560px, calc(100vw - 32px)); border: 0; border-radius: 10px; padding: 28px; box-shadow: 0 16px 48px #0005; direction: ltr; font-family: Arial, sans-serif; }
-    dialog::backdrop { background: #0008; }
+    dialog { position: fixed; inset: 64px 16px auto auto; width: min(430px, calc(100vw - 32px)); max-height: calc(100vh - 80px); overflow-y: auto; margin: 0; border: 1px solid #9b8c75; border-radius: 10px; padding: 22px; background: #fffdf8; box-shadow: 0 12px 36px #0005; direction: ltr; font-family: Arial, sans-serif; z-index: 20; }
+    dialog::backdrop { background: transparent; }
     dialog h2 { margin-top: 0; }
+    #studioDragHandle { cursor: move; user-select: none; touch-action: none; }
     dialog form, .studio-controls { display: grid; gap: 12px; }
     dialog input, dialog select, dialog textarea, dialog button { padding: 10px; font: inherit; }
     #phraseText { min-height: 120px; direction: rtl; font-family: "Taamey Frank CLM", "Taamey Frank CLM Medium", serif; font-size: 34px; line-height: 1.6; }
@@ -76,7 +77,7 @@
 <body>
   <h1>פָּרָשַׁת מִקֵּץ</h1>
   <div class="subtitle">בְּרֵאשִׁית מ״א:א׳–ט״ז</div>
-  <div class="version">v1.2.0</div>
+  <div class="version">v1.2.1</div>
 
   <section>
     <h2>Aliyah 1</h2>
@@ -126,7 +127,7 @@
       </form>
     </section>
     <section id="studioControls" class="studio-controls" hidden>
-      <h2>Recording Studio</h2>
+      <h2 id="studioDragHandle" title="Drag to move">Recording Studio</h2>
       <label for="targetType">Record audio for</label>
       <select id="targetType">
         <option value="phrase">Hebrew phrase</option>
@@ -151,6 +152,6 @@
       <p id="studioStatus" role="status"></p>
     </section>
   </dialog>
-  <script src="app.js?v=1.2.0"></script>
+  <script src="app.js?v=1.2.1"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 "use strict";
 
-const APP_VERSION = "1.2.0";
+const APP_VERSION = "1.2.1";
 const DB_NAME = "miketz-audio-studio";
 const VERSE_STORE = "recordings";
 const PHRASE_STORE = "phrases";
@@ -198,7 +198,9 @@ audioToggle.addEventListener("click", () => {
   if (!audioEnabled) activeAudio?.pause();
 });
 
-document.querySelector("#openStudio").addEventListener("click", () => dialog.showModal());
+document.querySelector("#openStudio").addEventListener("click", () => {
+  if (!dialog.open) dialog.show();
+});
 document.querySelector("#closeStudio").addEventListener("click", () => dialog.close());
 document.querySelector("#unlockForm").addEventListener("submit", event => {
   event.preventDefault();
@@ -305,6 +307,28 @@ deleteButton.addEventListener("click", async () => {
 
 dialog.addEventListener("close", () => {
   if (mediaRecorder?.state === "recording") mediaRecorder.stop();
+});
+
+const dragHandle = document.querySelector("#studioDragHandle");
+dragHandle.addEventListener("pointerdown", event => {
+  const rect = dialog.getBoundingClientRect();
+  const offsetX = event.clientX - rect.left;
+  const offsetY = event.clientY - rect.top;
+  dragHandle.setPointerCapture(event.pointerId);
+
+  const move = moveEvent => {
+    const maxLeft = Math.max(0, window.innerWidth - dialog.offsetWidth);
+    const maxTop = Math.max(0, window.innerHeight - 48);
+    dialog.style.inset = `${Math.min(Math.max(0, moveEvent.clientY - offsetY), maxTop)}px auto auto ${Math.min(Math.max(0, moveEvent.clientX - offsetX), maxLeft)}px`;
+  };
+  const stop = () => {
+    dragHandle.removeEventListener("pointermove", move);
+    dragHandle.removeEventListener("pointerup", stop);
+    dragHandle.removeEventListener("pointercancel", stop);
+  };
+  dragHandle.addEventListener("pointermove", move);
+  dragHandle.addEventListener("pointerup", stop);
+  dragHandle.addEventListener("pointercancel", stop);
 });
 
 refreshAudio().catch(error => setStatus(`Audio storage unavailable: ${error.message}`, true));
