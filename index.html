@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parashat Miketz — Genesis 41:1–16</title>
+  <style>
+    @page { size: letter; margin: 0.65in; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0 auto;
+      max-width: 8.5in;
+      padding: 0.65in;
+      color: #15120d;
+      background: #fffdf8;
+      font-family: "Taamey Frank CLM", "Taamey Frank CLM Medium", serif;
+      font-weight: 500;
+    }
+    h1 { margin: 0; text-align: center; font-size: 30px; }
+    .subtitle { margin: 6px 0 28px; text-align: center; font-size: 18px; }
+    section { margin: 0 0 26px; break-inside: avoid; }
+    h2 {
+      margin: 0 0 12px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #a88c54;
+      color: #694b17;
+      font: 700 17px Arial, sans-serif;
+      direction: ltr;
+      text-align: left;
+    }
+    p { margin: 0 0 10px; font-size: 23px; line-height: 1.75; text-align: right; }
+    .verse-number {
+      display: inline-block;
+      min-width: 48px;
+      margin-left: 7px;
+      color: #694b17;
+      font: 700 14px Arial, sans-serif;
+      direction: ltr;
+      unicode-bidi: isolate;
+      vertical-align: 0.15em;
+    }
+    .source { margin-top: 28px; color: #665f54; font: 11px Arial, sans-serif; direction: ltr; text-align: left; }
+    .version { margin: 4px 0 18px; color: #766d60; font: 12px Arial, sans-serif; direction: ltr; text-align: center; }
+    .verse-number { border: 0; border-radius: 5px; padding: 5px 6px; background: #eee5d3; cursor: pointer; }
+    .verse-number:hover, .verse-number:focus { color: white; background: #694b17; outline: none; }
+    .verse-number.has-audio { color: white; background: #2f7a4a; }
+    .studio-button, .audio-toggle { position: fixed; top: 12px; z-index: 10; border: 0; border-radius: 6px; padding: 10px 14px; color: white; font: 700 14px Arial, sans-serif; cursor: pointer; }
+    .studio-button { right: 12px; background: #294e6f; }
+    .audio-toggle { left: 12px; background: #2f7a4a; }
+    .audio-toggle[aria-pressed="false"] { background: #687078; }
+    dialog { width: min(560px, calc(100vw - 32px)); border: 0; border-radius: 10px; padding: 28px; box-shadow: 0 16px 48px #0005; direction: ltr; font-family: Arial, sans-serif; }
+    dialog::backdrop { background: #0008; }
+    dialog h2 { margin-top: 0; }
+    dialog form, .studio-controls { display: grid; gap: 12px; }
+    dialog input, dialog select, dialog button { padding: 10px; font: inherit; }
+    .studio-actions { display: flex; gap: 8px; }
+    .studio-actions button { flex: 1; }
+    #verseSelect { font-family: "Taamey Frank CLM", "Taamey Frank CLM Medium", serif; font-size: 22px; }
+    #studioPlayback { width: 100%; }
+    #studioStatus { min-height: 1.25em; margin: 0; }
+    .danger { color: #9d1c1c; }
+    [hidden] { display: none !important; }
+    @media print {
+      body { max-width: none; padding: 0; background: white; }
+    }
+  </style>
+</head>
+<body>
+  <h1>פָּרָשַׁת מִקֵּץ</h1>
+  <div class="subtitle">בְּרֵאשִׁית מ״א:א׳–ט״ז</div>
+  <div class="version">v1.0.0</div>
+
+  <section>
+    <h2>Aliyah 1</h2>
+    <p><span class="verse-number">41:1</span>וַיְהִ֕י מִקֵּ֖ץ שְׁנָתַ֣יִם יָמִ֑ים וּפַרְעֹ֣ה חֹלֵ֔ם וְהִנֵּ֖ה עֹמֵ֥ד עַל־הַיְאֹֽר׃</p>
+    <p><span class="verse-number">41:2</span>וְהִנֵּ֣ה מִן־הַיְאֹ֗ר עֹלֹת֙ שֶׁ֣בַע פָּר֔וֹת יְפ֥וֹת מַרְאֶ֖ה וּבְרִיאֹ֣ת בָּשָׂ֑ר וַתִּרְעֶ֖ינָה בָּאָֽחוּ׃</p>
+    <p><span class="verse-number">41:3</span>וְהִנֵּ֞ה שֶׁ֧בַע פָּר֣וֹת אֲחֵר֗וֹת עֹל֤וֹת אַחֲרֵיהֶן֙ מִן־הַיְאֹ֔ר רָע֥וֹת מַרְאֶ֖ה וְדַקּ֣וֹת בָּשָׂ֑ר וַֽתַּעֲמֹ֛דְנָה אֵ֥צֶל הַפָּר֖וֹת עַל־שְׂפַ֥ת הַיְאֹֽר׃</p>
+    <p><span class="verse-number">41:4</span>וַתֹּאכַ֣לְנָה הַפָּר֗וֹת רָע֤וֹת הַמַּרְאֶה֙ וְדַקֹּ֣ת הַבָּשָׂ֔ר אֵ֚ת שֶׁ֣בַע הַפָּר֔וֹת יְפֹ֥ת הַמַּרְאֶ֖ה וְהַבְּרִיאֹ֑ת וַיִּיקַ֖ץ פַּרְעֹֽה׃</p>
+  </section>
+
+  <section>
+    <h2>Aliyah 2</h2>
+    <p><span class="verse-number">41:5</span>וַיִּישָׁ֕ן וַֽיַּחֲלֹ֖ם שֵׁנִ֑ית וְהִנֵּ֣ה ׀ שֶׁ֣בַע שִׁבֳּלִ֗ים עֹל֛וֹת בְּקָנֶ֥ה אֶחָ֖ד בְּרִיא֥וֹת וְטֹבֽוֹת׃</p>
+    <p><span class="verse-number">41:6</span>וְהִנֵּה֙ שֶׁ֣בַע שִׁבֳּלִ֔ים דַּקּ֖וֹת וּשְׁדוּפֹ֣ת קָדִ֑ים צֹמְח֖וֹת אַחֲרֵיהֶֽן׃</p>
+    <p><span class="verse-number">41:7</span>וַתִּבְלַ֙עְנָה֙ הַשִּׁבֳּלִ֣ים הַדַּקּ֔וֹת אֵ֚ת שֶׁ֣בַע הַֽשִּׁבֳּלִ֔ים הַבְּרִיא֖וֹת וְהַמְּלֵא֑וֹת וַיִּיקַ֥ץ פַּרְעֹ֖ה וְהִנֵּ֥ה חֲלֽוֹם׃</p>
+    <p><span class="verse-number">41:8</span>וַיְהִ֤י בַבֹּ֙קֶר֙ וַתִּפָּ֣עֶם רוּח֔וֹ וַיִּשְׁלַ֗ח וַיִּקְרָ֛א אֶת־כׇּל־חַרְטֻמֵּ֥י מִצְרַ֖יִם וְאֶת־כׇּל־חֲכָמֶ֑יהָ וַיְסַפֵּ֨ר פַּרְעֹ֤ה לָהֶם֙ אֶת־חֲלֹמ֔וֹ וְאֵין־פּוֹתֵ֥ר אוֹתָ֖ם לְפַרְעֹֽה׃</p>
+  </section>
+
+  <section>
+    <h2>Aliyah 3</h2>
+    <p><span class="verse-number">41:9</span>וַיְדַבֵּר֙ שַׂ֣ר הַמַּשְׁקִ֔ים אֶת־פַּרְעֹ֖ה לֵאמֹ֑ר אֶת־חֲטָאַ֕י אֲנִ֖י מַזְכִּ֥יר הַיּֽוֹם׃</p>
+    <p><span class="verse-number">41:10</span>פַּרְעֹ֖ה קָצַ֣ף עַל־עֲבָדָ֑יו וַיִּתֵּ֨ן אֹתִ֜י בְּמִשְׁמַ֗ר בֵּ֚ית שַׂ֣ר הַטַּבָּחִ֔ים אֹתִ֕י וְאֵ֖ת שַׂ֥ר הָאֹפִֽים׃</p>
+    <p><span class="verse-number">41:11</span>וַנַּֽחַלְמָ֥ה חֲל֛וֹם בְּלַ֥יְלָה אֶחָ֖ד אֲנִ֣י וָה֑וּא אִ֛ישׁ כְּפִתְר֥וֹן חֲלֹמ֖וֹ חָלָֽמְנוּ׃</p>
+    <p><span class="verse-number">41:12</span>וְשָׁ֨ם אִתָּ֜נוּ נַ֣עַר עִבְרִ֗י עֶ֚בֶד לְשַׂ֣ר הַטַּבָּחִ֔ים וַ֨נְּסַפֶּר־ל֔וֹ וַיִּפְתׇּר־לָ֖נוּ אֶת־חֲלֹמֹתֵ֑ינוּ אִ֥ישׁ כַּחֲלֹמ֖וֹ פָּתָֽר׃</p>
+  </section>
+
+  <section>
+    <h2>Aliyah 4</h2>
+    <p><span class="verse-number">41:13</span>וַיְהִ֛י כַּאֲשֶׁ֥ר פָּֽתַר־לָ֖נוּ כֵּ֣ן הָיָ֑ה אֹתִ֛י הֵשִׁ֥יב עַל־כַּנִּ֖י וְאֹת֥וֹ תָלָֽה׃</p>
+    <p><span class="verse-number">41:14</span>וַיִּשְׁלַ֤ח פַּרְעֹה֙ וַיִּקְרָ֣א אֶת־יוֹסֵ֔ף וַיְרִיצֻ֖הוּ מִן־הַבּ֑וֹר וַיְגַלַּח֙ וַיְחַלֵּ֣ף שִׂמְלֹתָ֔יו וַיָּבֹ֖א אֶל־פַּרְעֹֽה׃</p>
+    <p><span class="verse-number">41:15</span>וַיֹּ֤אמֶר פַּרְעֹה֙ אֶל־יוֹסֵ֔ף חֲל֣וֹם חָלַ֔מְתִּי וּפֹתֵ֖ר אֵ֣ין אֹת֑וֹ וַאֲנִ֗י שָׁמַ֤עְתִּי עָלֶ֙יךָ֙ לֵאמֹ֔ר תִּשְׁמַ֥ע חֲל֖וֹם לִפְתֹּ֥ר אֹתֽוֹ׃</p>
+    <p><span class="verse-number">41:16</span>וַיַּ֨עַן יוֹסֵ֧ף אֶת־פַּרְעֹ֛ה לֵאמֹ֖ר בִּלְעָדָ֑י אֱלֹהִ֕ים יַעֲנֶ֖ה אֶת־שְׁל֥וֹם פַּרְעֹֽה׃</p>
+  </section>
+
+  <div class="source">Hebrew text: Miqra according to the Masorah, via Sefaria (CC BY-SA).</div>
+  <button class="studio-button" id="openStudio" type="button">Recording Studio</button>
+  <button class="audio-toggle" id="audioToggle" type="button" aria-pressed="true">Audio: On</button>
+
+  <dialog id="studioDialog" data-access-code="4321">
+    <button id="closeStudio" type="button" aria-label="Close" style="float:right">Close</button>
+    <section id="studioLock">
+      <h2>Recording Studio</h2>
+      <form id="unlockForm">
+        <label for="studioCode">Access code</label>
+        <input id="studioCode" type="password" inputmode="numeric" autocomplete="one-time-code" required>
+        <button type="submit">Unlock</button>
+        <p id="lockError" class="danger" role="alert"></p>
+      </form>
+    </section>
+    <section id="studioControls" class="studio-controls" hidden>
+      <h2>Recording Studio</h2>
+      <label for="verseSelect">Verse</label>
+      <select id="verseSelect"></select>
+      <div class="studio-actions">
+        <button id="recordButton" type="button">Record</button>
+        <button id="stopButton" type="button" disabled>Stop</button>
+      </div>
+      <audio id="studioPlayback" controls></audio>
+      <div class="studio-actions">
+        <button id="saveButton" type="button" disabled>Save recording</button>
+        <button id="deleteButton" class="danger" type="button">Delete audio</button>
+      </div>
+      <p id="storageNote">Recordings are saved in this browser on this device.</p>
+      <p id="studioStatus" role="status"></p>
+    </section>
+  </dialog>
+  <script src="app.js?v=1.0.0"></script>
+</body>
+</html>
