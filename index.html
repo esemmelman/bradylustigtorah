@@ -1,8 +1,9 @@
 <!doctype html>
-<html lang="he" dir="rtl">
+<html lang="he" dir="rtl" class="notranslate" translate="no">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google" content="notranslate">
   <title>Parashat Miketz — Genesis 41:1–16</title>
   <style>
     @page { size: letter; margin: 0.65in; }
@@ -44,6 +45,12 @@
     .verse-number { border: 0; border-radius: 5px; padding: 5px 6px; background: #eee5d3; cursor: pointer; }
     .verse-number:hover, .verse-number:focus { color: white; background: #694b17; outline: none; }
     .verse-number.has-audio { color: white; background: #2f7a4a; }
+    .phrase { border-radius: 4px; padding: 2px 1px; cursor: pointer; transition: filter 120ms ease; }
+    .phrase:hover, .phrase:focus { filter: brightness(0.88); outline: 2px solid #694b17; }
+    .phrase-color-0 { background: #fff0a8; }
+    .phrase-color-1 { background: #cfe9ff; }
+    .phrase-color-2 { background: #d9f2d2; }
+    .phrase-color-3 { background: #f4d5e8; }
     .studio-button, .audio-toggle { position: fixed; top: 12px; z-index: 10; border: 0; border-radius: 6px; padding: 10px 14px; color: white; font: 700 14px Arial, sans-serif; cursor: pointer; }
     .studio-button { right: 12px; background: #294e6f; }
     .audio-toggle { left: 12px; background: #2f7a4a; }
@@ -52,7 +59,8 @@
     dialog::backdrop { background: #0008; }
     dialog h2 { margin-top: 0; }
     dialog form, .studio-controls { display: grid; gap: 12px; }
-    dialog input, dialog select, dialog button { padding: 10px; font: inherit; }
+    dialog input, dialog select, dialog textarea, dialog button { padding: 10px; font: inherit; }
+    #phraseText { min-height: 92px; direction: rtl; font-family: "Taamey Frank CLM", "Taamey Frank CLM Medium", serif; font-size: 22px; line-height: 1.5; }
     .studio-actions { display: flex; gap: 8px; }
     .studio-actions button { flex: 1; }
     #verseSelect { font-family: "Taamey Frank CLM", "Taamey Frank CLM Medium", serif; font-size: 22px; }
@@ -68,7 +76,7 @@
 <body>
   <h1>פָּרָשַׁת מִקֵּץ</h1>
   <div class="subtitle">בְּרֵאשִׁית מ״א:א׳–ט״ז</div>
-  <div class="version">v1.0.0</div>
+  <div class="version">v1.1.0</div>
 
   <section>
     <h2>Aliyah 1</h2>
@@ -121,6 +129,8 @@
       <h2>Recording Studio</h2>
       <label for="verseSelect">Verse</label>
       <select id="verseSelect"></select>
+      <label for="phraseText">Phrase copied from the selected verse</label>
+      <textarea id="phraseText" dir="rtl" placeholder="Copy several words from the verse and paste them here"></textarea>
       <div class="studio-actions">
         <button id="recordButton" type="button">Record</button>
         <button id="stopButton" type="button" disabled>Stop</button>
@@ -128,12 +138,12 @@
       <audio id="studioPlayback" controls></audio>
       <div class="studio-actions">
         <button id="saveButton" type="button" disabled>Save recording</button>
-        <button id="deleteButton" class="danger" type="button">Delete audio</button>
+        <button id="deleteButton" class="danger" type="button">Delete phrase</button>
       </div>
       <p id="storageNote">Recordings are saved in this browser on this device.</p>
       <p id="studioStatus" role="status"></p>
     </section>
   </dialog>
-  <script src="app.js?v=1.0.0"></script>
+  <script src="app.js?v=1.1.0"></script>
 </body>
 </html>

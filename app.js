@@ -1,13 +1,19 @@
 "use strict";
 
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.1.0";
 const DB_NAME = "miketz-audio-studio";
-const STORE_NAME = "recordings";
+const VERSE_STORE = "recordings";
+const PHRASE_STORE = "phrases";
 const verseButtons = [...document.querySelectorAll(".verse-number")];
+const verseParagraphs = new Map();
+const phraseRecords = new Map();
+const phraseUrls = new Map();
+const verseUrls = new Map();
 const dialog = document.querySelector("#studioDialog");
 const lock = document.querySelector("#studioLock");
 const controls = document.querySelector("#studioControls");
 const select = document.querySelector("#verseSelect");
+const phraseText = document.querySelector("#phraseText");
 const playback = document.querySelector("#studioPlayback");
 const status = document.querySelector("#studioStatus");
 const recordButton = document.querySelector("#recordButton");
@@ -15,7 +21,6 @@ const stopButton = document.querySelector("#stopButton");
 const saveButton = document.querySelector("#saveButton");
 const deleteButton = document.querySelector("#deleteButton");
 const audioToggle = document.querySelector("#audioToggle");
-const audioUrls = new Map();
 let activeAudio;
 let mediaRecorder;
 let recordingChunks = [];
@@ -27,59 +32,117 @@ document.querySelector(".version").textContent = `v${APP_VERSION}`;
 
 verseButtons.forEach(button => {
   const id = button.textContent.trim();
+  const paragraph = button.closest("p");
+  const text = [...paragraph.childNodes]
+    .filter(node => node !== button)
+    .map(node => node.textContent)
+    .join("");
   button.dataset.audioId = id;
   button.setAttribute("role", "button");
   button.setAttribute("tabindex", "0");
   button.setAttribute("aria-label", `Play Genesis ${id}`);
+  verseParagraphs.set(id, { paragraph, button, text });
   const option = document.createElement("option");
   option.value = id;
   option.textContent = `Genesis ${id}`;
   select.append(option);
-  button.addEventListener("click", () => playVerse(id));
-  button.addEventListener("keydown", event => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      playVerse(id);
-    }
-  });
+  button.addEventListener("click", () => playUrl(verseUrls.get(id)));
+  button.addEventListener("keydown", event => activateWithKeyboard(event, () => playUrl(verseUrls.get(id))));
 });
+
+function normalizePhrase(value) {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+function phraseKey(verseId, text) {
+  return `${verseId}::${normalizePhrase(text)}`;
+}
+
+function activateWithKeyboard(event, action) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    action();
+  }
+}
 
 function openDatabase() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1);
-    request.onupgradeneeded = () => request.result.createObjectStore(STORE_NAME);
+    const request = indexedDB.open(DB_NAME, 2);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(VERSE_STORE)) db.createObjectStore(VERSE_STORE);
+      if (!db.objectStoreNames.contains(PHRASE_STORE)) db.createObjectStore(PHRASE_STORE);
+    };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
 }
 
-async function useStore(mode, action) {
+async function useStore(storeName, mode, action) {
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, mode);
-    const request = action(transaction.objectStore(STORE_NAME));
+    const transaction = db.transaction(storeName, mode);
+    const request = action(transaction.objectStore(storeName));
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
     transaction.oncomplete = () => db.close();
   });
 }
 
+async function getAllRecords(storeName) {
+  const keys = await useStore(storeName, "readonly", store => store.getAllKeys());
+  const records = [];
+  for (const key of keys) records.push([String(key), await useStore(storeName, "readonly", store => store.get(key))]);
+  return records;
+}
+
 async function refreshAudio() {
-  audioUrls.forEach(url => URL.revokeObjectURL(url));
-  audioUrls.clear();
-  const keys = await useStore("readonly", store => store.getAllKeys());
-  for (const key of keys) {
-    const blob = await useStore("readonly", store => store.get(key));
-    audioUrls.set(String(key), URL.createObjectURL(blob));
+  verseUrls.forEach(URL.revokeObjectURL);
+  phraseUrls.forEach(URL.revokeObjectURL);
+  verseUrls.clear();
+  phraseUrls.clear();
+  phraseRecords.clear();
+
+  for (const [key, blob] of await getAllRecords(VERSE_STORE)) verseUrls.set(key, URL.createObjectURL(blob));
+  for (const [key, record] of await getAllRecords(PHRASE_STORE)) {
+    if (!record?.blob || !record?.verseId || !record?.text) continue;
+    phraseRecords.set(key, record);
+    phraseUrls.set(key, URL.createObjectURL(record.blob));
   }
-  verseButtons.forEach(button => button.classList.toggle("has-audio", audioUrls.has(button.dataset.audioId)));
+  verseButtons.forEach(button => button.classList.toggle("has-audio", verseUrls.has(button.dataset.audioId)));
+  renderAllPhrases();
   refreshPreview();
 }
 
-function playVerse(id) {
-  if (!audioEnabled) return;
-  const url = audioUrls.get(id);
-  if (!url) return;
+function renderAllPhrases() {
+  for (const [verseId, verse] of verseParagraphs) {
+    const records = [...phraseRecords.entries()]
+      .filter(([, record]) => record.verseId === verseId)
+      .map(([key, record]) => ({ key, ...record, start: verse.text.indexOf(record.text) }))
+      .filter(record => record.start >= 0)
+      .sort((a, b) => a.start - b.start);
+    verse.paragraph.replaceChildren(verse.button);
+    let cursor = 0;
+    records.forEach((record, colorIndex) => {
+      if (record.start < cursor) return;
+      verse.paragraph.append(document.createTextNode(verse.text.slice(cursor, record.start)));
+      const phrase = document.createElement("span");
+      phrase.className = `phrase phrase-color-${colorIndex % 4}`;
+      phrase.textContent = record.text;
+      phrase.tabIndex = 0;
+      phrase.setAttribute("role", "button");
+      phrase.setAttribute("aria-label", `Play phrase: ${record.text}`);
+      phrase.addEventListener("click", () => playUrl(phraseUrls.get(record.key)));
+      phrase.addEventListener("keydown", event => activateWithKeyboard(event, () => playUrl(phraseUrls.get(record.key))));
+      verse.paragraph.append(phrase);
+      cursor = record.start + record.text.length;
+    });
+    verse.paragraph.append(document.createTextNode(verse.text.slice(cursor)));
+  }
+}
+
+function playUrl(url) {
+  if (!audioEnabled || !url) return;
   activeAudio?.pause();
   activeAudio = new Audio(url);
   activeAudio.play().catch(() => {});
@@ -90,15 +153,32 @@ function setStatus(message, isError = false) {
   status.classList.toggle("danger", isError);
 }
 
+function currentKey() {
+  return phraseKey(select.value, phraseText.value);
+}
+
+function phraseIsValid() {
+  const phrase = normalizePhrase(phraseText.value);
+  return phrase && verseParagraphs.get(select.value).text.includes(phrase);
+}
+
 function refreshPreview() {
+  const key = currentKey();
   if (recordingBlob) {
     deleteButton.textContent = "Discard recording";
     deleteButton.disabled = false;
     return;
   }
-  playback.src = audioUrls.get(select.value) || "";
-  deleteButton.textContent = "Delete audio";
-  deleteButton.disabled = !audioUrls.has(select.value);
+  playback.src = phraseUrls.get(key) || "";
+  deleteButton.textContent = "Delete phrase";
+  deleteButton.disabled = !phraseRecords.has(key);
+}
+
+function resetPhraseState() {
+  recordingBlob = undefined;
+  saveButton.disabled = true;
+  refreshPreview();
+  setStatus(phraseText.value && !phraseIsValid() ? "Paste an exact phrase from the selected verse." : "", Boolean(phraseText.value && !phraseIsValid()));
 }
 
 audioToggle.addEventListener("click", () => {
@@ -120,17 +200,20 @@ document.querySelector("#unlockForm").addEventListener("submit", event => {
   error.textContent = "";
   lock.hidden = true;
   controls.hidden = false;
-  setStatus("Studio unlocked.");
+  setStatus("Studio unlocked. Copy words from a verse and paste them into the phrase box.");
 });
 
 select.addEventListener("change", () => {
-  recordingBlob = undefined;
-  saveButton.disabled = true;
-  refreshPreview();
-  setStatus("");
+  phraseText.value = "";
+  resetPhraseState();
 });
+phraseText.addEventListener("input", resetPhraseState);
 
 recordButton.addEventListener("click", async () => {
+  if (!phraseIsValid()) {
+    setStatus("Paste an exact phrase from the selected verse before recording.", true);
+    return;
+  }
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     recordingChunks = [];
@@ -147,12 +230,12 @@ recordButton.addEventListener("click", async () => {
       saveButton.disabled = false;
       refreshPreview();
       stream.getTracks().forEach(track => track.stop());
-      setStatus("Recording ready. Play it back, then save or record again.");
+      setStatus("Phrase recording ready. Play it back, then save or record again.");
     });
     mediaRecorder.start();
     recordButton.disabled = true;
     stopButton.disabled = false;
-    setStatus("Recording…");
+    setStatus("Recording phrase…");
   } catch (error) {
     setStatus(`Microphone unavailable: ${error.message}`, true);
   }
@@ -165,14 +248,16 @@ stopButton.addEventListener("click", () => {
 });
 
 saveButton.addEventListener("click", async () => {
-  if (!recordingBlob) return;
+  if (!recordingBlob || !phraseIsValid()) return;
+  const text = normalizePhrase(phraseText.value);
+  const key = phraseKey(select.value, text);
   try {
     saveButton.disabled = true;
     setStatus("Saving…");
-    await useStore("readwrite", store => store.put(recordingBlob, select.value));
+    await useStore(PHRASE_STORE, "readwrite", store => store.put({ verseId: select.value, text, blob: recordingBlob }, key));
     recordingBlob = undefined;
     await refreshAudio();
-    setStatus("Recording saved in this browser.");
+    setStatus("Phrase saved. Click any highlighted word in the phrase to play it.");
   } catch (error) {
     saveButton.disabled = false;
     setStatus(error.message, true);
@@ -187,10 +272,11 @@ deleteButton.addEventListener("click", async () => {
     setStatus("Unsaved recording discarded.");
     return;
   }
-  if (!audioUrls.has(select.value) || !confirm(`Delete the recording for Genesis ${select.value}?`)) return;
-  await useStore("readwrite", store => store.delete(select.value));
+  const key = currentKey();
+  if (!phraseRecords.has(key) || !confirm(`Delete this phrase recording?`)) return;
+  await useStore(PHRASE_STORE, "readwrite", store => store.delete(key));
   await refreshAudio();
-  setStatus("Recording deleted.");
+  setStatus("Phrase recording deleted.");
 });
 
 dialog.addEventListener("close", () => {
