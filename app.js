@@ -1,6 +1,6 @@
 "use strict";
 
-const APP_VERSION = "1.3.1";
+const APP_VERSION = "1.3.2";
 const DB_NAME = "miketz-audio-studio";
 const VERSE_STORE = "recordings";
 const PHRASE_STORE = "phrases";
