@@ -1,6 +1,6 @@
 "use strict";
 
-const APP_VERSION = "1.2.1";
+const APP_VERSION = "1.2.2";
 const DB_NAME = "miketz-audio-studio";
 const VERSE_STORE = "recordings";
 const PHRASE_STORE = "phrases";
@@ -161,6 +161,16 @@ function phraseIsValid() {
   return phrase && verseParagraphs.get(select.value).text.includes(phrase);
 }
 
+function detectPhraseVerse() {
+  const phrase = normalizePhrase(phraseText.value);
+  if (!phrase) return false;
+  if (verseParagraphs.get(select.value).text.includes(phrase)) return true;
+  const match = [...verseParagraphs].find(([, verse]) => verse.text.includes(phrase));
+  if (!match) return false;
+  select.value = match[0];
+  return true;
+}
+
 function refreshPreview() {
   if (recordingBlob) {
     deleteButton.textContent = "Discard recording";
@@ -187,7 +197,9 @@ function resetPhraseState() {
   if (recordingVerseNumber()) {
     setStatus(`Ready to record the spoken number Genesis ${select.value}.`);
   } else {
-    setStatus(phraseText.value && !phraseIsValid() ? "Paste an exact phrase from the selected verse." : "", Boolean(phraseText.value && !phraseIsValid()));
+    const hasText = Boolean(normalizePhrase(phraseText.value));
+    const valid = phraseIsValid();
+    setStatus(hasText ? (valid ? `Phrase found in Genesis ${select.value}. Ready to record.` : "Phrase not found. Copy an exact phrase from one of the displayed verses.") : "", hasText && !valid);
   }
 }
 
@@ -220,7 +232,10 @@ select.addEventListener("change", () => {
   resetPhraseState();
 });
 targetType.addEventListener("change", resetPhraseState);
-phraseText.addEventListener("input", resetPhraseState);
+phraseText.addEventListener("input", () => {
+  detectPhraseVerse();
+  resetPhraseState();
+});
 
 recordButton.addEventListener("click", async () => {
   if (!recordingVerseNumber() && !phraseIsValid()) {
