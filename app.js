@@ -1,6 +1,6 @@
 "use strict";
 
-const APP_VERSION = "1.2.2";
+const APP_VERSION = "1.3.0";
 const DB_NAME = "miketz-audio-studio";
 const VERSE_STORE = "recordings";
 const PHRASE_STORE = "phrases";
@@ -23,8 +23,12 @@ const stopButton = document.querySelector("#stopButton");
 const saveButton = document.querySelector("#saveButton");
 const deleteButton = document.querySelector("#deleteButton");
 const audioToggle = document.querySelector("#audioToggle");
+const levelFill = document.querySelector("#levelFill");
+const levelMeter = document.querySelector(".level-meter");
 let activeAudio;
 let mediaRecorder;
+let meterAudioContext;
+let levelAnimation;
 let recordingChunks = [];
 let recordingBlob;
 let previewUrl;
@@ -143,6 +147,90 @@ function playUrl(url) {
   activeAudio.play().catch(() => {});
 }
 
+function wait(milliseconds) {
+  return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
+function startLevelMeter(stream) {
+  meterAudioContext = new AudioContext();
+  const source = meterAudioContext.createMediaStreamSource(stream);
+  const analyser = meterAudioContext.createAnalyser();
+  analyser.fftSize = 1024;
+  source.connect(analyser);
+  const samples = new Uint8Array(analyser.fftSize);
+  const update = () => {
+    analyser.getByteTimeDomainData(samples);
+    let sum = 0;
+    for (const sample of samples) {
+      const value = (sample - 128) / 128;
+      sum += value * value;
+    }
+    const rms = Math.sqrt(sum / samples.length);
+    const level = Math.min(100, Math.round(rms * 320));
+    levelFill.style.width = `${level}%`;
+    levelMeter.setAttribute("aria-valuenow", String(level));
+    levelAnimation = requestAnimationFrame(update);
+  };
+  update();
+}
+
+function stopLevelMeter() {
+  cancelAnimationFrame(levelAnimation);
+  meterAudioContext?.close().catch(() => {});
+  meterAudioContext = undefined;
+  levelFill.style.width = "0";
+  levelMeter.setAttribute("aria-valuenow", "0");
+}
+
+async function normalizeRecording(blob) {
+  const context = new AudioContext();
+  try {
+    const buffer = await context.decodeAudioData(await blob.arrayBuffer());
+    let peak = 0;
+    for (let channel = 0; channel < buffer.numberOfChannels; channel += 1) {
+      for (const sample of buffer.getChannelData(channel)) peak = Math.max(peak, Math.abs(sample));
+    }
+    if (!peak) return blob;
+    const gain = Math.min(4, 0.9 / peak);
+    return audioBufferToWav(buffer, gain);
+  } finally {
+    await context.close();
+  }
+}
+
+function audioBufferToWav(buffer, gain) {
+  const channels = buffer.numberOfChannels;
+  const frameCount = buffer.length;
+  const bytesPerSample = 2;
+  const dataSize = frameCount * channels * bytesPerSample;
+  const output = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(output);
+  const writeText = (offset, text) => [...text].forEach((character, index) => view.setUint8(offset + index, character.charCodeAt(0)));
+  writeText(0, "RIFF");
+  view.setUint32(4, 36 + dataSize, true);
+  writeText(8, "WAVE");
+  writeText(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, channels, true);
+  view.setUint32(24, buffer.sampleRate, true);
+  view.setUint32(28, buffer.sampleRate * channels * bytesPerSample, true);
+  view.setUint16(32, channels * bytesPerSample, true);
+  view.setUint16(34, 16, true);
+  writeText(36, "data");
+  view.setUint32(40, dataSize, true);
+  const channelData = Array.from({ length: channels }, (_, channel) => buffer.getChannelData(channel));
+  let offset = 44;
+  for (let frame = 0; frame < frameCount; frame += 1) {
+    for (let channel = 0; channel < channels; channel += 1) {
+      const sample = Math.max(-1, Math.min(1, channelData[channel][frame] * gain));
+      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+      offset += 2;
+    }
+  }
+  return new Blob([output], { type: "audio/wav" });
+}
+
 function setStatus(message, isError = false) {
   status.textContent = message;
   status.classList.toggle("danger", isError);
@@ -243,30 +331,52 @@ recordButton.addEventListener("click", async () => {
     return;
   }
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    recordButton.disabled = true;
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        autoGainControl: false,
+        noiseSuppression: false,
+        echoCancellation: false,
+        channelCount: 1
+      }
+    });
+    startLevelMeter(stream);
+    for (let count = 3; count > 0; count -= 1) {
+      setStatus(`Recording starts in ${count}… Watch the microphone level.`);
+      await wait(1000);
+    }
     recordingChunks = [];
     recordingBlob = undefined;
     mediaRecorder = new MediaRecorder(stream);
     mediaRecorder.addEventListener("dataavailable", event => {
       if (event.data.size) recordingChunks.push(event.data);
     });
-    mediaRecorder.addEventListener("stop", () => {
-      recordingBlob = new Blob(recordingChunks, { type: mediaRecorder.mimeType || "audio/webm" });
+    mediaRecorder.addEventListener("stop", async () => {
+      const rawBlob = new Blob(recordingChunks, { type: mediaRecorder.mimeType || "audio/webm" });
+      setStatus("Normalizing volume…");
+      try {
+        recordingBlob = await normalizeRecording(rawBlob);
+      } catch (error) {
+        console.info(`Normalization unavailable: ${error.message}`);
+        recordingBlob = rawBlob;
+      }
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       previewUrl = URL.createObjectURL(recordingBlob);
       playback.src = previewUrl;
       saveButton.disabled = false;
       refreshPreview();
       stream.getTracks().forEach(track => track.stop());
+      stopLevelMeter();
       setStatus(recordingVerseNumber()
         ? `Genesis ${select.value} recording ready. Play it back, then save or record again.`
         : "Phrase recording ready. Play it back, then save or record again.");
     });
     mediaRecorder.start();
-    recordButton.disabled = true;
     stopButton.disabled = false;
     setStatus(recordingVerseNumber() ? `Recording Genesis ${select.value}…` : "Recording phrase…");
   } catch (error) {
+    recordButton.disabled = false;
+    stopLevelMeter();
     setStatus(`Microphone unavailable: ${error.message}`, true);
   }
 });

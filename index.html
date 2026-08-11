@@ -69,6 +69,9 @@
     #verseSelect { font-family: "Taamey Frank CLM", "Taamey Frank CLM Medium", serif; font-size: 22px; }
     #studioPlayback { width: 100%; }
     #studioStatus { min-height: 1.25em; margin: 0; }
+    .level-meter { height: 16px; overflow: hidden; border: 1px solid #81796d; border-radius: 8px; background: #e8e4dc; }
+    #levelFill { width: 0; height: 100%; background: linear-gradient(90deg, #2f7a4a 0 70%, #d99a22 70% 88%, #b52c2c 88%); transition: width 60ms linear; }
+    .meter-label { margin: 0; color: #665f54; font-size: 13px; }
     .danger { color: #9d1c1c; }
     [hidden] { display: none !important; }
     @media print {
@@ -79,7 +82,7 @@
 <body>
   <h1>פָּרָשַׁת מִקֵּץ</h1>
   <div class="subtitle">בְּרֵאשִׁית מ״א:א׳–ט״ז</div>
-  <div class="version">v1.2.2</div>
+  <div class="version">v1.3.0</div>
 
   <section>
     <h2>Aliyah 1</h2>
@@ -146,6 +149,10 @@
         <button id="recordButton" type="button">Record</button>
         <button id="stopButton" type="button" disabled>Stop</button>
       </div>
+      <p class="meter-label">Microphone level</p>
+      <div class="level-meter" role="meter" aria-label="Microphone level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div id="levelFill"></div>
+      </div>
       <audio id="studioPlayback" controls></audio>
       <div class="studio-actions">
         <button id="saveButton" type="button" disabled>Save recording</button>
@@ -155,6 +162,6 @@
       <p id="studioStatus" role="status"></p>
     </section>
   </dialog>
-  <script src="app.js?v=1.2.2"></script>
+  <script src="app.js?v=1.3.0"></script>
 </body>
 </html>
