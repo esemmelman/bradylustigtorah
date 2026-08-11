@@ -29,7 +29,7 @@
       direction: ltr;
       text-align: left;
     }
-    p { margin: 0 0 14px; font-size: 30px; line-height: 1.8; text-align: right; }
+    p { margin: 0 0 18px; font-size: 38px; line-height: 1.85; text-align: right; }
     .verse-number {
       display: inline-block;
       min-width: 48px;
@@ -60,7 +60,7 @@
     dialog h2 { margin-top: 0; }
     dialog form, .studio-controls { display: grid; gap: 12px; }
     dialog input, dialog select, dialog textarea, dialog button { padding: 10px; font: inherit; }
-    #phraseText { min-height: 110px; direction: rtl; font-family: "Taamey Frank CLM", "Taamey Frank CLM Medium", serif; font-size: 28px; line-height: 1.6; }
+    #phraseText { min-height: 120px; direction: rtl; font-family: "Taamey Frank CLM", "Taamey Frank CLM Medium", serif; font-size: 34px; line-height: 1.6; }
     .studio-actions { display: flex; gap: 8px; }
     .studio-actions button { flex: 1; }
     #verseSelect { font-family: "Taamey Frank CLM", "Taamey Frank CLM Medium", serif; font-size: 22px; }
@@ -76,7 +76,7 @@
 <body>
   <h1>פָּרָשַׁת מִקֵּץ</h1>
   <div class="subtitle">בְּרֵאשִׁית מ״א:א׳–ט״ז</div>
-  <div class="version">v1.1.2</div>
+  <div class="version">v1.2.0</div>
 
   <section>
     <h2>Aliyah 1</h2>
@@ -127,10 +127,17 @@
     </section>
     <section id="studioControls" class="studio-controls" hidden>
       <h2>Recording Studio</h2>
+      <label for="targetType">Record audio for</label>
+      <select id="targetType">
+        <option value="phrase">Hebrew phrase</option>
+        <option value="verse-number">Chapter and verse number</option>
+      </select>
       <label for="verseSelect">Verse</label>
       <select id="verseSelect"></select>
-      <label for="phraseText">Phrase copied from the selected verse</label>
-      <textarea id="phraseText" dir="rtl" placeholder="Copy several words from the verse and paste them here"></textarea>
+      <div id="phraseField" style="display:grid; gap:12px">
+        <label for="phraseText">Phrase copied from the selected verse</label>
+        <textarea id="phraseText" dir="rtl" placeholder="Copy several words from the verse and paste them here"></textarea>
+      </div>
       <div class="studio-actions">
         <button id="recordButton" type="button">Record</button>
         <button id="stopButton" type="button" disabled>Stop</button>
@@ -144,6 +151,6 @@
       <p id="studioStatus" role="status"></p>
     </section>
   </dialog>
-  <script src="app.js?v=1.1.2"></script>
+  <script src="app.js?v=1.2.0"></script>
 </body>
 </html>

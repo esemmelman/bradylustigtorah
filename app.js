@@ -1,6 +1,6 @@
 "use strict";
 
-const APP_VERSION = "1.1.2";
+const APP_VERSION = "1.2.0";
 const DB_NAME = "miketz-audio-studio";
 const VERSE_STORE = "recordings";
 const PHRASE_STORE = "phrases";
@@ -13,6 +13,8 @@ const dialog = document.querySelector("#studioDialog");
 const lock = document.querySelector("#studioLock");
 const controls = document.querySelector("#studioControls");
 const select = document.querySelector("#verseSelect");
+const targetType = document.querySelector("#targetType");
+const phraseField = document.querySelector("#phraseField");
 const phraseText = document.querySelector("#phraseText");
 const playback = document.querySelector("#studioPlayback");
 const status = document.querySelector("#studioStatus");
@@ -150,28 +152,43 @@ function currentKey() {
   return phraseKey(select.value, phraseText.value);
 }
 
+function recordingVerseNumber() {
+  return targetType.value === "verse-number";
+}
+
 function phraseIsValid() {
   const phrase = normalizePhrase(phraseText.value);
   return phrase && verseParagraphs.get(select.value).text.includes(phrase);
 }
 
 function refreshPreview() {
-  const key = currentKey();
   if (recordingBlob) {
     deleteButton.textContent = "Discard recording";
     deleteButton.disabled = false;
     return;
   }
-  playback.src = phraseUrls.get(key) || "";
-  deleteButton.textContent = "Delete phrase";
-  deleteButton.disabled = !phraseRecords.has(key);
+  if (recordingVerseNumber()) {
+    playback.src = verseUrls.get(select.value) || "";
+    deleteButton.textContent = "Delete number audio";
+    deleteButton.disabled = !verseUrls.has(select.value);
+  } else {
+    const key = currentKey();
+    playback.src = phraseUrls.get(key) || "";
+    deleteButton.textContent = "Delete phrase";
+    deleteButton.disabled = !phraseRecords.has(key);
+  }
 }
 
 function resetPhraseState() {
   recordingBlob = undefined;
   saveButton.disabled = true;
+  phraseField.hidden = recordingVerseNumber();
   refreshPreview();
-  setStatus(phraseText.value && !phraseIsValid() ? "Paste an exact phrase from the selected verse." : "", Boolean(phraseText.value && !phraseIsValid()));
+  if (recordingVerseNumber()) {
+    setStatus(`Ready to record the spoken number Genesis ${select.value}.`);
+  } else {
+    setStatus(phraseText.value && !phraseIsValid() ? "Paste an exact phrase from the selected verse." : "", Boolean(phraseText.value && !phraseIsValid()));
+  }
 }
 
 audioToggle.addEventListener("click", () => {
@@ -200,10 +217,11 @@ select.addEventListener("change", () => {
   phraseText.value = "";
   resetPhraseState();
 });
+targetType.addEventListener("change", resetPhraseState);
 phraseText.addEventListener("input", resetPhraseState);
 
 recordButton.addEventListener("click", async () => {
-  if (!phraseIsValid()) {
+  if (!recordingVerseNumber() && !phraseIsValid()) {
     setStatus("Paste an exact phrase from the selected verse before recording.", true);
     return;
   }
@@ -223,12 +241,14 @@ recordButton.addEventListener("click", async () => {
       saveButton.disabled = false;
       refreshPreview();
       stream.getTracks().forEach(track => track.stop());
-      setStatus("Phrase recording ready. Play it back, then save or record again.");
+      setStatus(recordingVerseNumber()
+        ? `Genesis ${select.value} recording ready. Play it back, then save or record again.`
+        : "Phrase recording ready. Play it back, then save or record again.");
     });
     mediaRecorder.start();
     recordButton.disabled = true;
     stopButton.disabled = false;
-    setStatus("Recording phrase…");
+    setStatus(recordingVerseNumber() ? `Recording Genesis ${select.value}…` : "Recording phrase…");
   } catch (error) {
     setStatus(`Microphone unavailable: ${error.message}`, true);
   }
@@ -241,16 +261,22 @@ stopButton.addEventListener("click", () => {
 });
 
 saveButton.addEventListener("click", async () => {
-  if (!recordingBlob || !phraseIsValid()) return;
-  const text = normalizePhrase(phraseText.value);
-  const key = phraseKey(select.value, text);
+  if (!recordingBlob || (!recordingVerseNumber() && !phraseIsValid())) return;
   try {
     saveButton.disabled = true;
     setStatus("Saving…");
-    await useStore(PHRASE_STORE, "readwrite", store => store.put({ verseId: select.value, text, blob: recordingBlob }, key));
+    if (recordingVerseNumber()) {
+      await useStore(VERSE_STORE, "readwrite", store => store.put(recordingBlob, select.value));
+    } else {
+      const text = normalizePhrase(phraseText.value);
+      const key = phraseKey(select.value, text);
+      await useStore(PHRASE_STORE, "readwrite", store => store.put({ verseId: select.value, text, blob: recordingBlob }, key));
+    }
     recordingBlob = undefined;
     await refreshAudio();
-    setStatus("Phrase saved. Click any highlighted word in the phrase to play it.");
+    setStatus(recordingVerseNumber()
+      ? `Number audio saved. Hover over ${select.value} to play it.`
+      : "Phrase saved. Hover over any highlighted word in the phrase to play it.");
   } catch (error) {
     saveButton.disabled = false;
     setStatus(error.message, true);
@@ -265,11 +291,16 @@ deleteButton.addEventListener("click", async () => {
     setStatus("Unsaved recording discarded.");
     return;
   }
-  const key = currentKey();
-  if (!phraseRecords.has(key) || !confirm(`Delete this phrase recording?`)) return;
-  await useStore(PHRASE_STORE, "readwrite", store => store.delete(key));
+  if (recordingVerseNumber()) {
+    if (!verseUrls.has(select.value) || !confirm(`Delete the number audio for Genesis ${select.value}?`)) return;
+    await useStore(VERSE_STORE, "readwrite", store => store.delete(select.value));
+  } else {
+    const key = currentKey();
+    if (!phraseRecords.has(key) || !confirm(`Delete this phrase recording?`)) return;
+    await useStore(PHRASE_STORE, "readwrite", store => store.delete(key));
+  }
   await refreshAudio();
-  setStatus("Phrase recording deleted.");
+  setStatus(recordingVerseNumber() ? "Number recording deleted." : "Phrase recording deleted.");
 });
 
 dialog.addEventListener("close", () => {
