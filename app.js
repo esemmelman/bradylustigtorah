@@ -1,6 +1,6 @@
 "use strict";
 
-const APP_VERSION = "1.4.1";
+const APP_VERSION = "1.4.2";
 const DB_NAME = "miketz-audio-studio";
 const VERSE_STORE = "recordings";
 const PHRASE_STORE = "phrases";
@@ -42,7 +42,7 @@ fontToggles.forEach(toggle => toggle.addEventListener("click", () => {
   document.body.classList.toggle("torah-font", enabled);
   fontToggles.forEach(button => {
     button.setAttribute("aria-pressed", String(enabled));
-    button.textContent = `Torah font: ${enabled ? "On" : "Off"}`;
+    button.textContent = `Torah ${enabled ? "On" : "Off"}`;
   });
 }));
 
