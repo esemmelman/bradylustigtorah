@@ -1,6 +1,6 @@
 "use strict";
 
-const APP_VERSION = "1.4.2";
+const APP_VERSION = "1.5.0";
 const DB_NAME = "miketz-audio-studio";
 const VERSE_STORE = "recordings";
 const PHRASE_STORE = "phrases";
@@ -33,17 +33,16 @@ let recordingChunks = [];
 let recordingBlob;
 let previewUrl;
 let audioEnabled = true;
+let displayMode = "trope";
 
 document.querySelector(".version").textContent = `v${APP_VERSION}`;
 
-const fontToggles = [...document.querySelectorAll(".font-toggle")];
-fontToggles.forEach(toggle => toggle.addEventListener("click", () => {
-  const enabled = !document.body.classList.contains("torah-font");
-  document.body.classList.toggle("torah-font", enabled);
-  fontToggles.forEach(button => {
-    button.setAttribute("aria-pressed", String(enabled));
-    button.textContent = `Torah ${enabled ? "On" : "Off"}`;
-  });
+const textModeButtons = [...document.querySelectorAll(".text-mode-button")];
+textModeButtons.forEach(button => button.addEventListener("click", () => {
+  displayMode = button.dataset.mode;
+  document.body.classList.toggle("torah-script", displayMode === "torah");
+  textModeButtons.forEach(modeButton => modeButton.setAttribute("aria-pressed", String(modeButton.dataset.mode === displayMode)));
+  renderAllPhrases();
 }));
 
 verseButtons.forEach(button => {
@@ -147,7 +146,19 @@ function renderAllPhrases() {
       cursor = record.start + record.text.length;
     });
     verse.paragraph.append(document.createTextNode(verse.text.slice(cursor)));
+    transformDisplayedText(verse.paragraph);
   }
+}
+
+function transformDisplayedText(paragraph) {
+  if (displayMode === "trope") return;
+  const filter = displayMode === "regular"
+    ? value => value.replace(/[\u0591-\u05AF]/g, "")
+    : value => value.replace(/[\u0591-\u05BD\u05BF\u05C1\u05C2\u05C4\u05C5\u05C7]/g, "");
+  const walker = document.createTreeWalker(paragraph, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(node => { node.nodeValue = filter(node.nodeValue); });
 }
 
 function playUrl(url) {
