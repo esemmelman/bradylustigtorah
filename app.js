@@ -1,6 +1,6 @@
 "use strict";
 
-const APP_VERSION = "1.5.0";
+const APP_VERSION = "1.5.1";
 const DB_NAME = "miketz-audio-studio";
 const VERSE_STORE = "recordings";
 const PHRASE_STORE = "phrases";
@@ -41,6 +41,7 @@ const textModeButtons = [...document.querySelectorAll(".text-mode-button")];
 textModeButtons.forEach(button => button.addEventListener("click", () => {
   displayMode = button.dataset.mode;
   document.body.classList.toggle("torah-script", displayMode === "torah");
+  document.body.classList.toggle("regular-view", displayMode === "regular");
   textModeButtons.forEach(modeButton => modeButton.setAttribute("aria-pressed", String(modeButton.dataset.mode === displayMode)));
   renderAllPhrases();
 }));
@@ -162,7 +163,7 @@ function transformDisplayedText(paragraph) {
 }
 
 function playUrl(url) {
-  if (!audioEnabled || !url) return;
+  if (displayMode === "regular" || !audioEnabled || !url) return;
   activeAudio?.pause();
   activeAudio = new Audio(url);
   activeAudio.play().catch(() => {});

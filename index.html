@@ -60,6 +60,9 @@
     .phrase-color-1 { background: #cfe9ff; }
     .phrase-color-2 { background: #d9f2d2; }
     .phrase-color-3 { background: #f4d5e8; }
+    body.regular-view .phrase { padding: 0; background: transparent; cursor: text; }
+    body.regular-view .phrase:hover, body.regular-view .phrase:focus { filter: none; outline: none; }
+    body.regular-view .verse-number.has-audio { color: #694b17; background: #eee5d3; }
     .studio-button, .audio-toggle { position: fixed; top: 12px; z-index: 10; border: 0; border-radius: 6px; padding: 10px 14px; color: white; font: 700 14px Arial, sans-serif; cursor: pointer; }
     .studio-button { right: 12px; background: #294e6f; }
     .audio-toggle { left: 12px; background: #2f7a4a; }
@@ -90,7 +93,7 @@
 </head>
 <body>
   <h1 dir="ltr">Torah Portion Meeketz</h1>
-  <div class="version">v1.5.0</div>
+  <div class="version">v1.5.1</div>
 
   <section>
     <h2><span>Aliyah 1</span><span class="text-mode-buttons"><button class="text-mode-button" data-mode="regular" type="button" aria-pressed="false">Regular</button><button class="text-mode-button" data-mode="trope" type="button" aria-pressed="true">Trope</button><button class="text-mode-button" data-mode="torah" type="button" aria-pressed="false">Torah script</button></span></h2>
@@ -170,6 +173,6 @@
       <p id="studioStatus" role="status"></p>
     </section>
   </dialog>
-  <script src="app.js?v=1.5.0"></script>
+  <script src="app.js?v=1.5.1"></script>
 </body>
 </html>
