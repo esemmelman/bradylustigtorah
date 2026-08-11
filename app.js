@@ -1,6 +1,6 @@
 "use strict";
 
-const APP_VERSION = "1.1.1";
+const APP_VERSION = "1.1.2";
 const DB_NAME = "miketz-audio-studio";
 const VERSE_STORE = "recordings";
 const PHRASE_STORE = "phrases";
@@ -46,8 +46,8 @@ verseButtons.forEach(button => {
   option.value = id;
   option.textContent = `Genesis ${id}`;
   select.append(option);
-  button.addEventListener("click", () => playUrl(verseUrls.get(id)));
-  button.addEventListener("keydown", event => activateWithKeyboard(event, () => playUrl(verseUrls.get(id))));
+  button.addEventListener("mouseenter", () => playUrl(verseUrls.get(id)));
+  button.addEventListener("focus", () => playUrl(verseUrls.get(id)));
 });
 
 function normalizePhrase(value) {
@@ -56,13 +56,6 @@ function normalizePhrase(value) {
 
 function phraseKey(verseId, text) {
   return `${verseId}::${normalizePhrase(text)}`;
-}
-
-function activateWithKeyboard(event, action) {
-  if (event.key === "Enter" || event.key === " ") {
-    event.preventDefault();
-    action();
-  }
 }
 
 function openDatabase() {
@@ -132,8 +125,8 @@ function renderAllPhrases() {
       phrase.tabIndex = 0;
       phrase.setAttribute("role", "button");
       phrase.setAttribute("aria-label", `Play phrase: ${record.text}`);
-      phrase.addEventListener("click", () => playUrl(phraseUrls.get(record.key)));
-      phrase.addEventListener("keydown", event => activateWithKeyboard(event, () => playUrl(phraseUrls.get(record.key))));
+      phrase.addEventListener("mouseenter", () => playUrl(phraseUrls.get(record.key)));
+      phrase.addEventListener("focus", () => playUrl(phraseUrls.get(record.key)));
       verse.paragraph.append(phrase);
       cursor = record.start + record.text.length;
     });
