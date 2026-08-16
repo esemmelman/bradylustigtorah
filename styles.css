@@ -1,0 +1,268 @@
+@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;600;700&display=swap');
+
+@font-face {
+  font-family: "Taamey Frank CLM";
+  src: url("fonts/taamey-frank/TTF/TaameyFrankCLM-Medium.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Stam Ashkenaz CLM";
+  src: url("fonts/StamAshkenazCLM.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+  --ink: #263026;
+  --muted: #766f60;
+  --paper: #fffdf7;
+  --cream: #f3ead6;
+  --gold: #b78535;
+  --green: #365a47;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 12% 16%, rgba(183,133,53,.12), transparent 24rem),
+    linear-gradient(135deg, #eee1c6, #faf6eb 48%, #e8ddc6);
+  font-family: Georgia, serif;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: .15;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.2'/%3E%3C/svg%3E");
+}
+
+.page {
+  width: min(980px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 72px 0 56px;
+  text-align: center;
+}
+
+.page-header {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  margin: -72px calc(50% - 50vw) 18px;
+  padding: 54px max(16px, calc((100vw - 980px) / 2)) 0;
+  background: rgba(247, 239, 221, .96);
+  box-shadow: 0 8px 20px rgba(72,57,31,.08);
+  backdrop-filter: blur(8px);
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: var(--gold);
+  font: 700 .78rem/1.2 Arial, sans-serif;
+  letter-spacing: .22em;
+}
+
+h1 { margin: 0 0 18px; font-size: clamp(1.35rem, 3vw, 2rem); font-weight: 400; }
+
+.display-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 0;
+  padding-bottom: 18px;
+}
+
+.display-toggle {
+  min-width: 84px;
+  border: 1px solid #cab98f;
+  border-radius: 999px;
+  padding: 9px 16px;
+  color: var(--ink);
+  background: #fffaf0;
+  cursor: pointer;
+  font: 600 .8rem/1 Arial, sans-serif;
+}
+
+.display-toggle:hover, .display-toggle.active {
+  border-color: var(--green);
+  color: white;
+  background: var(--green);
+}
+
+.display-toggle:focus-visible { outline: 3px solid rgba(54,90,71,.4); outline-offset: 3px; }
+
+.passage-card {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: clamp(54px, 8vw, 88px) clamp(25px, 7vw, 80px) 50px;
+  border: 1px solid rgba(82,70,45,.22);
+  border-radius: 4px;
+  color: var(--ink);
+  background: rgba(255,253,247,.91);
+  box-shadow: 0 20px 55px rgba(72,57,31,.14), inset 0 0 55px rgba(183,133,53,.04);
+}
+
+.passage-card::before, .passage-card::after {
+  content: "◆";
+  position: absolute;
+  top: 18px;
+  color: var(--gold);
+  font-size: .65rem;
+}
+.passage-card::before { left: 22px; }
+.passage-card::after { right: 22px; }
+
+.aliyah-heading {
+  margin: 1.65em 0 .45em;
+  color: var(--gold);
+  font: 700 .78rem/1.2 Arial, sans-serif;
+  letter-spacing: .16em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.aliyah-heading:first-child { margin-top: 0; }
+
+.verse-row {
+  display: flex;
+  align-items: baseline;
+  gap: .35em;
+  text-align: right;
+  font-family: "Taamey Frank CLM", "FrankRuehl", "Frank Ruhl Libre", "Times New Roman", serif;
+  font-size: clamp(1.7rem, 4.1vw, 2.85rem);
+  line-height: 1.9;
+}
+
+.verse-number {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 999px;
+  padding: .15em .4em;
+  color: var(--gold);
+  background: transparent;
+  cursor: pointer;
+  font: 600 .52em/1 Arial, sans-serif;
+}
+
+.verse-number:hover, .verse-number.playing { color: white; background: var(--green); }
+.verse-number:focus-visible { outline: 3px solid rgba(54,90,71,.4); outline-offset: 3px; }
+.verse-number:disabled { opacity: .55; cursor: wait; }
+.verse-line { unicode-bidi: isolate; }
+.word {
+  border-radius: .12em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.word.highlight-1 { color: #76500f; background: #f3d88e; }
+.word.highlight-2 { color: #244b3a; background: #bcdac8; }
+.word-space.highlight-1 { background: #f3d88e; }
+.word-space.highlight-2 { background: #bcdac8; }
+.word[data-group-id], .word-space[data-group-id] { cursor: pointer; }
+.word.audio-active {
+  color: #17251d;
+  font-weight: 700;
+}
+.word-space.audio-active { font-weight: 700; }
+
+.group-audio-controls {
+  display: none;
+  direction: ltr;
+  gap: 3px;
+  margin: 0 .2em;
+  vertical-align: middle;
+}
+
+.group-audio-button {
+  display: inline-grid;
+  width: 2em;
+  height: 2em;
+  place-items: center;
+  border: 1px solid #cab98f;
+  border-radius: 999px;
+  padding: 0;
+  color: var(--green);
+  background: #fffaf0;
+  cursor: pointer;
+  font: 600 .34em/1 Arial, sans-serif;
+}
+
+.group-audio-button:hover { color: white; background: var(--green); border-color: var(--green); }
+.group-audio-button.record-group { color: #a43f32; }
+.group-audio-button.recording { color: white; background: #a43f32; border-color: #a43f32; animation: recording-pulse 1.2s infinite; }
+.group-audio-button:disabled { opacity: .55; cursor: wait; }
+
+@keyframes recording-pulse { 50% { transform: scale(.88); opacity: .75; } }
+
+.script-mode .verse-row {
+  font-family: "Stam Ashkenaz CLM", "Taamey Frank CLM", "Frank Ruhl Libre", serif;
+  line-height: 1.65;
+}
+
+.script-mode .word[class*="highlight-"], .script-mode .word-space[class*="highlight-"] { color: inherit; background: transparent; }
+.script-mode .audio-active { font-weight: inherit; }
+
+.corner { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); color: var(--gold); font-family: "FrankRuehl", "Frank Ruhl Libre", serif; }
+
+.verse-text {
+  display: block;
+  font-family: "Taamey Frank CLM", "FrankRuehl", "Frank Ruhl Libre", "Times New Roman", serif;
+  font-size: clamp(2.15rem, 6.2vw, 4.8rem);
+  font-weight: 400;
+  line-height: 1.95;
+  unicode-bidi: isolate;
+}
+
+.verse-text span {
+  display: inline-block;
+  padding: 0 .035em;
+  border-radius: .12em;
+  transition: color .16s, background .16s, transform .16s;
+}
+
+
+.verse-text span.active { color: #8a5b12; background: #f6e8c5; transform: translateY(-2px); }
+.play-hint { display: block; margin-top: 18px; color: var(--muted); direction: ltr; font: .75rem/1 Arial, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+.play-icon { color: var(--gold); margin-right: 6px; }
+
+.controls { display: flex; justify-content: center; align-items: center; gap: 20px; margin: 24px 0 8px; }
+.play-button, select { border: 1px solid #cab98f; background: #fffaf0; color: var(--ink); border-radius: 999px; padding: 10px 18px; font: 600 .85rem Arial, sans-serif; }
+.play-button { cursor: pointer; }
+.play-button:hover { background: var(--green); color: white; border-color: var(--green); }
+.controls label { color: var(--muted); font: .78rem Arial, sans-serif; }
+select { margin-left: 6px; padding: 8px 12px; }
+.status { min-height: 1.3em; color: var(--muted); font-style: italic; }
+.version {
+  display: inline-block;
+  margin: 18px 0 0;
+  border: 1px solid rgba(82,70,45,.2);
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: var(--muted);
+  background: rgba(255,253,247,.65);
+  font: .72rem/1 Arial, sans-serif;
+  letter-spacing: .08em;
+}
+
+.translation { max-width: 650px; margin: 38px auto 0; padding-top: 25px; border-top: 1px solid rgba(82,70,45,.2); }
+.translation h2 { margin: 0 0 8px; color: var(--gold); font: 700 .72rem Arial, sans-serif; letter-spacing: .18em; text-transform: uppercase; }
+.translation p { margin: 0; font-size: 1.08rem; line-height: 1.65; }
+
+@media (max-width: 560px) {
+  .page { padding-top: 38px; }
+  .page-header { margin-top: -38px; padding-top: 28px; }
+  .verse-text { line-height: 1.8; }
+  .controls { flex-direction: column; gap: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

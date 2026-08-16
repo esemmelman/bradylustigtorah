@@ -1,481 +1,738 @@
-"use strict";
+const passage = document.querySelector('#passage');
+const status = document.querySelector('#status');
+const tropeToggle = document.querySelector('#trope-toggle');
+const scriptToggle = document.querySelector('#script-toggle');
+const SUPABASE_URL = 'https://fgomaujsdblpzxhnnqrg.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
+const SUPABASE_STORAGE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnb21hdWpzZGJscHp4aG5ucXJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNjM3MjYsImV4cCI6MjA5OTgzOTcyNn0.1iMPI_7F_8ioNVnuThxqAKfMfD7G4NbyXilXZEERScw';
+const HIGHLIGHT_TABLE = 'aria_torah_highlight_groups_v1';
+const RECORDING_TABLE = 'aria_torah_group_recordings_v1';
+const RECORDING_BUCKET = 'aria-torah-group-recordings-v1';
+const PASSAGE_KEY = 'genesis-41-1-16';
 
-const APP_VERSION = "1.5.2";
-const DB_NAME = "miketz-audio-studio";
-const VERSE_STORE = "recordings";
-const PHRASE_STORE = "phrases";
-const verseButtons = [...document.querySelectorAll(".verse-number")];
-const verseParagraphs = new Map();
-const phraseRecords = new Map();
-const phraseUrls = new Map();
-const verseUrls = new Map();
-const dialog = document.querySelector("#studioDialog");
-const lock = document.querySelector("#studioLock");
-const controls = document.querySelector("#studioControls");
-const select = document.querySelector("#verseSelect");
-const targetType = document.querySelector("#targetType");
-const phraseField = document.querySelector("#phraseField");
-const phraseText = document.querySelector("#phraseText");
-const playback = document.querySelector("#studioPlayback");
-const status = document.querySelector("#studioStatus");
-const recordButton = document.querySelector("#recordButton");
-const stopButton = document.querySelector("#stopButton");
-const saveButton = document.querySelector("#saveButton");
-const deleteButton = document.querySelector("#deleteButton");
-const audioToggle = document.querySelector("#audioToggle");
-const levelFill = document.querySelector("#levelFill");
-const levelMeter = document.querySelector(".level-meter");
-let activeAudio;
-let mediaRecorder;
-let meterAudioContext;
-let levelAnimation;
-let recordingChunks = [];
-let recordingBlob;
-let previewUrl;
-let audioEnabled = true;
-let displayMode = "trope";
+const FALLBACK_VERSES = [
+  'וַיְהִי מִקֵּץ שְׁנָתַיִם יָמִים וּפַרְעֹה חֹלֵם וְהִנֵּה עֹמֵד עַל־הַיְאֹֽר׃',
+  'וְהִנֵּה מִן־הַיְאֹר עֹלֹת שֶׁבַע פָּרוֹת יְפוֹת מַרְאֶה וּבְרִיאֹת בָּשָׂר וַתִּרְעֶינָה בָּאָֽחוּ׃',
+  'וְהִנֵּה שֶׁבַע פָּרוֹת אֲחֵרוֹת עֹלוֹת אַחֲרֵיהֶן מִן־הַיְאֹר רָעוֹת מַרְאֶה וְדַקּוֹת בָּשָׂר וַֽתַּעֲמֹדְנָה אֵצֶל הַפָּרוֹת עַל־שְׂפַת הַיְאֹֽר׃',
+  'וַתֹּאכַלְנָה הַפָּרוֹת רָעוֹת הַמַּרְאֶה וְדַקֹּת הַבָּשָׂר אֵת שֶׁבַע הַפָּרוֹת יְפֹת הַמַּרְאֶה וְהַבְּרִיאֹת וַיִּיקַץ פַּרְעֹֽה׃',
+  'וַיִּישָׁן וַֽיַּחֲלֹם שֵׁנִית וְהִנֵּה ׀ שֶׁבַע שִׁבֳּלִים עֹלוֹת בְּקָנֶה אֶחָד בְּרִיאוֹת וְטֹבֽוֹת׃',
+  'וְהִנֵּה שֶׁבַע שִׁבֳּלִים דַּקּוֹת וּשְׁדוּפֹת קָדִים צֹמְחוֹת אַחֲרֵיהֶֽן׃',
+  'וַתִּבְלַעְנָה הַשִּׁבֳּלִים הַדַּקּוֹת אֵת שֶׁבַע הַֽשִּׁבֳּלִים הַבְּרִיאוֹת וְהַמְּלֵאוֹת וַיִּיקַץ פַּרְעֹה וְהִנֵּה חֲלֽוֹם׃',
+  'וַיְהִי בַבֹּקֶר וַתִּפָּעֶם רוּחוֹ וַיִּשְׁלַח וַיִּקְרָא אֶת־כׇּל־חַרְטֻמֵּי מִצְרַיִם וְאֶת־כׇּל־חֲכָמֶיהָ וַיְסַפֵּר פַּרְעֹה לָהֶם אֶת־חֲלֹמוֹ וְאֵין־פּוֹתֵר אוֹתָם לְפַרְעֹֽה׃',
+  'וַיְדַבֵּר שַׂר הַמַּשְׁקִים אֶת־פַּרְעֹה לֵאמֹר אֶת־חֲטָאַי אֲנִי מַזְכִּיר הַיּֽוֹם׃',
+  'פַּרְעֹה קָצַף עַל־עֲבָדָיו וַיִּתֵּן אֹתִי בְּמִשְׁמַר בֵּית שַׂר הַטַּבָּחִים אֹתִי וְאֵת שַׂר הָאֹפִֽים׃',
+  'וַנַּֽחַלְמָה חֲלוֹם בְּלַיְלָה אֶחָד אֲנִי וָהוּא אִישׁ כְּפִתְרוֹן חֲלֹמוֹ חָלָֽמְנוּ׃',
+  'וְשָׁם אִתָּנוּ נַעַר עִבְרִי עֶבֶד לְשַׂר הַטַּבָּחִים וַנְּסַפֶּר־לוֹ וַיִּפְתׇּר־לָנוּ אֶת־חֲלֹמֹתֵינוּ אִישׁ כַּחֲלֹמוֹ פָּתָֽר׃',
+  'וַיְהִי כַּאֲשֶׁר פָּֽתַר־לָנוּ כֵּן הָיָה אֹתִי הֵשִׁיב עַל־כַּנִּי וְאֹתוֹ תָלָֽה׃',
+  'וַיִּשְׁלַח פַּרְעֹה וַיִּקְרָא אֶת־יוֹסֵף וַיְרִיצֻהוּ מִן־הַבּוֹר וַיְגַלַּח וַיְחַלֵּף שִׂמְלֹתָיו וַיָּבֹא אֶל־פַּרְעֹֽה׃',
+  'וַיֹּאמֶר פַּרְעֹה אֶל־יוֹסֵף חֲלוֹם חָלַמְתִּי וּפֹתֵר אֵין אֹתוֹ וַאֲנִי שָׁמַעְתִּי עָלֶיךָ לֵאמֹר תִּשְׁמַע חֲלוֹם לִפְתֹּר אֹתֽוֹ׃',
+  'וַיַּעַן יוֹסֵף אֶת־פַּרְעֹה לֵאמֹר בִּלְעָדָי אֱלֹהִים יַעֲנֶה אֶת־שְׁלוֹם פַּרְעֹֽה׃'
+];
 
-document.querySelector(".version").textContent = `v${APP_VERSION}`;
+const audioByVerse = new Map();
+let activeVerse = null;
+let activePlaylist = null;
+let sourceVerses = FALLBACK_VERSES;
+let showTrope = true;
+let scriptMode = false;
+const HIGHLIGHT_STORAGE_KEY = 'brady-torah-highlights-v1';
+let highlights = loadHighlights();
+let highlightsReady = false;
+const recordings = new Map();
+let activeRecorder = null;
+let playbackAudioContext = null;
+let hoveredGroupAudio = null;
+let hoveredGroupId = null;
+const ALIYAH_HEADINGS = new Map([
+  [1, 'Aliyah 1'],
+  [5, 'Aliyah 2'],
+  [9, 'Aliyah 3'],
+  [13, 'Aliyah 4']
+]);
 
-const textModeButtons = [...document.querySelectorAll(".text-mode-button")];
-textModeButtons.forEach(button => button.addEventListener("click", () => {
-  displayMode = button.dataset.mode;
-  document.body.classList.toggle("torah-script", displayMode === "torah");
-  document.body.classList.toggle("silent-view", displayMode !== "trope");
-  textModeButtons.forEach(modeButton => modeButton.setAttribute("aria-pressed", String(modeButton.dataset.mode === displayMode)));
-  renderAllPhrases();
-}));
+function findRecording(value, verseNumber) {
+  const candidates = [];
 
-verseButtons.forEach(button => {
-  const id = button.textContent.trim();
-  const paragraph = button.closest("p");
-  const text = [...paragraph.childNodes]
-    .filter(node => node !== button)
-    .map(node => node.textContent)
-    .join("");
-  button.dataset.audioId = id;
-  button.setAttribute("role", "button");
-  button.setAttribute("tabindex", "0");
-  button.setAttribute("aria-label", `Play Genesis ${id}`);
-  verseParagraphs.set(id, { paragraph, button, text });
-  const option = document.createElement("option");
-  option.value = id;
-  option.textContent = `Genesis ${id}`;
-  select.append(option);
-  button.addEventListener("mouseenter", () => playUrl(verseUrls.get(id)));
-  button.addEventListener("focus", () => playUrl(verseUrls.get(id)));
-});
+  function visit(item) {
+    if (!item || typeof item !== 'object') return;
+    const strings = Object.values(item).filter(child => typeof child === 'string');
+    const url = strings.find(child => /\.(mp3|m4a|ogg|wav)(?:[?#]|$)/i.test(child));
+    if (url) {
+      const description = JSON.stringify(item);
+      const exactRef = new RegExp(`Genesis(?:\\.| )41(?:\\.|:)${verseNumber}(?!\\d)`, 'i');
+      candidates.push({
+        url,
+        start: Number(item.start_time ?? item.startTime ?? item.start ?? 0),
+        end: Number(item.end_time ?? item.endTime ?? item.end ?? 0),
+        score: exactRef.test(description) ? 1 : 0
+      });
+    }
+    Object.values(item).forEach(visit);
+  }
 
-function normalizePhrase(value) {
-  return value.trim().replace(/\s+/g, " ");
+  visit(value);
+  candidates.sort((a, b) => b.score - a.score);
+  return candidates[0] || null;
 }
 
-function phraseKey(verseId, text) {
-  return `${verseId}::${normalizePhrase(text)}`;
+function stripHtml(value) {
+  const template = document.createElement('template');
+  template.innerHTML = value;
+  return template.content.textContent.trim();
 }
 
-function openDatabase() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 2);
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains(VERSE_STORE)) db.createObjectStore(VERSE_STORE);
-      if (!db.objectStoreNames.contains(PHRASE_STORE)) db.createObjectStore(PHRASE_STORE);
+function loadHighlights() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(HIGHLIGHT_STORAGE_KEY));
+    return Array.isArray(saved) ? saved : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function supabaseHeaders(extra = {}) {
+  return {
+    apikey: SUPABASE_KEY,
+    'Content-Type': 'application/json',
+    ...extra
+  };
+}
+
+function highlightForWord(verse, wordIndex) {
+  return highlights.find(item => item.verse === verse && wordIndex >= item.start && wordIndex <= item.end);
+}
+
+async function loadRemoteHighlights() {
+  const locallySaved = loadHighlights();
+  try {
+    if (locallySaved.length) {
+      const migrationRows = locallySaved.map(item => ({
+        passage_key: PASSAGE_KEY,
+        verse: item.verse,
+        start_word: item.start,
+        end_word: item.end,
+        color: item.color
+      }));
+      const migrationResponse = await fetch(`${SUPABASE_URL}/rest/v1/${HIGHLIGHT_TABLE}?on_conflict=passage_key,verse,start_word,end_word`, {
+        method: 'POST',
+        headers: supabaseHeaders({ Prefer: 'resolution=ignore-duplicates' }),
+        body: JSON.stringify(migrationRows)
+      });
+      if (!migrationResponse.ok) throw new Error('Local highlight migration failed');
+      localStorage.removeItem(HIGHLIGHT_STORAGE_KEY);
+    }
+
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/${HIGHLIGHT_TABLE}?passage_key=eq.${PASSAGE_KEY}&select=id,verse,start_word,end_word,color&order=id.asc`, {
+      headers: supabaseHeaders()
+    });
+    if (!response.ok) throw new Error('Highlight request failed');
+    highlights = (await response.json()).map(item => ({
+      id: item.id,
+      verse: item.verse,
+      start: item.start_word,
+      end: item.end_word,
+      color: item.color
+    }));
+    highlightsReady = true;
+    await loadRecordings();
+    updateDisplay();
+  } catch (error) {
+    status.textContent = 'Saved highlights could not be loaded. You can still read the passage.';
+  }
+}
+
+async function loadRecordings() {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/${RECORDING_TABLE}?select=highlight_group_id,object_path,mime_type,byte_size,updated_at`, {
+    headers: supabaseHeaders()
+  });
+  if (!response.ok) throw new Error('Recording request failed');
+  recordings.clear();
+  (await response.json()).forEach(item => recordings.set(item.highlight_group_id, item));
+}
+
+function recordingUrl(objectPath) {
+  return `${SUPABASE_URL}/storage/v1/object/public/${RECORDING_BUCKET}/${objectPath}`;
+}
+
+function currentRecordingUrl(recording) {
+  return `${recordingUrl(recording.object_path)}?v=${encodeURIComponent(recording.updated_at || recording.byte_size)}`;
+}
+
+function preferredRecordingType() {
+  const types = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4'];
+  return types.find(type => MediaRecorder.isTypeSupported(type)) || '';
+}
+
+function recordingExtension(mimeType) {
+  if (mimeType.includes('ogg')) return 'ogg';
+  if (mimeType.includes('mp4')) return 'mp4';
+  return 'webm';
+}
+
+async function uploadRecording(groupId, blob) {
+  const mimeType = blob.type.split(';')[0] || 'audio/webm';
+  const objectPath = `groups/${groupId}.${recordingExtension(mimeType)}`;
+  const uploadResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/${RECORDING_BUCKET}/${objectPath}`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_STORAGE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_STORAGE_ANON_KEY}`,
+      'Content-Type': mimeType,
+      'x-upsert': 'true'
+    },
+    body: blob
+  });
+  if (!uploadResponse.ok) throw new Error('Audio upload failed');
+
+  const metadataResponse = await fetch(`${SUPABASE_URL}/rest/v1/${RECORDING_TABLE}?on_conflict=highlight_group_id`, {
+    method: 'POST',
+    headers: supabaseHeaders({ Prefer: 'resolution=merge-duplicates,return=representation' }),
+    body: JSON.stringify({
+      highlight_group_id: groupId,
+      object_path: objectPath,
+      mime_type: mimeType,
+      byte_size: blob.size,
+      updated_at: new Date().toISOString()
+    })
+  });
+  if (!metadataResponse.ok) throw new Error('Recording metadata save failed');
+  const [saved] = await metadataResponse.json();
+  recordings.set(groupId, saved);
+}
+
+async function toggleGroupRecording(button) {
+  if (!highlightsReady) {
+    status.textContent = 'Please wait for saved groups to finish loading.';
+    return;
+  }
+  const groupId = Number(button.dataset.groupId);
+  if (activeRecorder) {
+    if (activeRecorder.groupId !== groupId) {
+      status.textContent = 'Stop the current recording before starting another group.';
+      return;
+    }
+    activeRecorder.recorder.stop();
+    return;
+  }
+
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+    status.textContent = 'Audio recording is not supported in this browser.';
+    return;
+  }
+
+  try {
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          sampleRate: { ideal: 48000 },
+          channelCount: { ideal: 1 },
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false
+        }
+      });
+    } catch (error) {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    }
+    const mimeType = preferredRecordingType();
+    let recorder;
+    try {
+      recorder = new MediaRecorder(stream, {
+        ...(mimeType ? { mimeType } : {}),
+        audioBitsPerSecond: 256000
+      });
+    } catch (error) {
+      recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    }
+    const chunks = [];
+    recorder.ondataavailable = event => {
+      if (event.data.size) chunks.push(event.data);
     };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-async function useStore(storeName, mode, action) {
-  const db = await openDatabase();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(storeName, mode);
-    const request = action(transaction.objectStore(storeName));
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-    transaction.oncomplete = () => db.close();
-  });
-}
-
-async function getAllRecords(storeName) {
-  const keys = await useStore(storeName, "readonly", store => store.getAllKeys());
-  const records = [];
-  for (const key of keys) records.push([String(key), await useStore(storeName, "readonly", store => store.get(key))]);
-  return records;
-}
-
-async function refreshAudio() {
-  verseUrls.forEach(URL.revokeObjectURL);
-  phraseUrls.forEach(URL.revokeObjectURL);
-  verseUrls.clear();
-  phraseUrls.clear();
-  phraseRecords.clear();
-
-  for (const [key, blob] of await getAllRecords(VERSE_STORE)) verseUrls.set(key, URL.createObjectURL(blob));
-  for (const [key, record] of await getAllRecords(PHRASE_STORE)) {
-    if (!record?.blob || !record?.verseId || !record?.text) continue;
-    phraseRecords.set(key, record);
-    phraseUrls.set(key, URL.createObjectURL(record.blob));
-  }
-  verseButtons.forEach(button => button.classList.toggle("has-audio", verseUrls.has(button.dataset.audioId)));
-  renderAllPhrases();
-  refreshPreview();
-}
-
-function renderAllPhrases() {
-  for (const [verseId, verse] of verseParagraphs) {
-    const records = [...phraseRecords.entries()]
-      .filter(([, record]) => record.verseId === verseId)
-      .map(([key, record]) => ({ key, ...record, start: verse.text.indexOf(record.text) }))
-      .filter(record => record.start >= 0)
-      .sort((a, b) => a.start - b.start);
-    verse.paragraph.replaceChildren(verse.button);
-    let cursor = 0;
-    records.forEach((record, colorIndex) => {
-      if (record.start < cursor) return;
-      verse.paragraph.append(document.createTextNode(verse.text.slice(cursor, record.start)));
-      const phrase = document.createElement("span");
-      phrase.className = `phrase phrase-color-${colorIndex % 4}`;
-      phrase.textContent = record.text;
-      phrase.tabIndex = 0;
-      phrase.setAttribute("role", "button");
-      phrase.setAttribute("aria-label", `Play phrase: ${record.text}`);
-      phrase.addEventListener("mouseenter", () => playUrl(phraseUrls.get(record.key)));
-      phrase.addEventListener("focus", () => playUrl(phraseUrls.get(record.key)));
-      verse.paragraph.append(phrase);
-      cursor = record.start + record.text.length;
-    });
-    verse.paragraph.append(document.createTextNode(verse.text.slice(cursor)));
-    transformDisplayedText(verse.paragraph);
-  }
-}
-
-function transformDisplayedText(paragraph) {
-  if (displayMode === "trope") return;
-  const filter = displayMode === "regular"
-    ? value => value.replace(/[\u0591-\u05AF]/g, "")
-    : value => value.replace(/[\u0591-\u05BD\u05BF\u05C1\u05C2\u05C4\u05C5\u05C7]/g, "");
-  const walker = document.createTreeWalker(paragraph, NodeFilter.SHOW_TEXT);
-  const nodes = [];
-  while (walker.nextNode()) nodes.push(walker.currentNode);
-  nodes.forEach(node => { node.nodeValue = filter(node.nodeValue); });
-}
-
-function playUrl(url) {
-  if (displayMode !== "trope" || !audioEnabled || !url) return;
-  activeAudio?.pause();
-  activeAudio = new Audio(url);
-  activeAudio.play().catch(() => {});
-}
-
-function wait(milliseconds) {
-  return new Promise(resolve => setTimeout(resolve, milliseconds));
-}
-
-function startLevelMeter(stream) {
-  meterAudioContext = new AudioContext();
-  const source = meterAudioContext.createMediaStreamSource(stream);
-  const analyser = meterAudioContext.createAnalyser();
-  analyser.fftSize = 1024;
-  source.connect(analyser);
-  const samples = new Uint8Array(analyser.fftSize);
-  const update = () => {
-    analyser.getByteTimeDomainData(samples);
-    let sum = 0;
-    for (const sample of samples) {
-      const value = (sample - 128) / 128;
-      sum += value * value;
-    }
-    const rms = Math.sqrt(sum / samples.length);
-    const level = Math.min(100, Math.round(rms * 320));
-    levelFill.style.width = `${level}%`;
-    levelMeter.setAttribute("aria-valuenow", String(level));
-    levelAnimation = requestAnimationFrame(update);
-  };
-  update();
-}
-
-function stopLevelMeter() {
-  cancelAnimationFrame(levelAnimation);
-  meterAudioContext?.close().catch(() => {});
-  meterAudioContext = undefined;
-  levelFill.style.width = "0";
-  levelMeter.setAttribute("aria-valuenow", "0");
-}
-
-async function normalizeRecording(blob) {
-  const context = new AudioContext();
-  try {
-    const buffer = await context.decodeAudioData(await blob.arrayBuffer());
-    let peak = 0;
-    for (let channel = 0; channel < buffer.numberOfChannels; channel += 1) {
-      for (const sample of buffer.getChannelData(channel)) peak = Math.max(peak, Math.abs(sample));
-    }
-    if (!peak) return blob;
-    const gain = Math.min(4, 0.9 / peak);
-    return audioBufferToWav(buffer, gain);
-  } finally {
-    await context.close();
-  }
-}
-
-function audioBufferToWav(buffer, gain) {
-  const channels = buffer.numberOfChannels;
-  const frameCount = buffer.length;
-  const bytesPerSample = 2;
-  const dataSize = frameCount * channels * bytesPerSample;
-  const output = new ArrayBuffer(44 + dataSize);
-  const view = new DataView(output);
-  const writeText = (offset, text) => [...text].forEach((character, index) => view.setUint8(offset + index, character.charCodeAt(0)));
-  writeText(0, "RIFF");
-  view.setUint32(4, 36 + dataSize, true);
-  writeText(8, "WAVE");
-  writeText(12, "fmt ");
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, channels, true);
-  view.setUint32(24, buffer.sampleRate, true);
-  view.setUint32(28, buffer.sampleRate * channels * bytesPerSample, true);
-  view.setUint16(32, channels * bytesPerSample, true);
-  view.setUint16(34, 16, true);
-  writeText(36, "data");
-  view.setUint32(40, dataSize, true);
-  const channelData = Array.from({ length: channels }, (_, channel) => buffer.getChannelData(channel));
-  let offset = 44;
-  for (let frame = 0; frame < frameCount; frame += 1) {
-    for (let channel = 0; channel < channels; channel += 1) {
-      const sample = Math.max(-1, Math.min(1, channelData[channel][frame] * gain));
-      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
-      offset += 2;
-    }
-  }
-  return new Blob([output], { type: "audio/wav" });
-}
-
-function setStatus(message, isError = false) {
-  status.textContent = message;
-  status.classList.toggle("danger", isError);
-}
-
-function currentKey() {
-  return phraseKey(select.value, phraseText.value);
-}
-
-function recordingVerseNumber() {
-  return targetType.value === "verse-number";
-}
-
-function phraseIsValid() {
-  const phrase = normalizePhrase(phraseText.value);
-  return phrase && verseParagraphs.get(select.value).text.includes(phrase);
-}
-
-function detectPhraseVerse() {
-  const phrase = normalizePhrase(phraseText.value);
-  if (!phrase) return false;
-  if (verseParagraphs.get(select.value).text.includes(phrase)) return true;
-  const match = [...verseParagraphs].find(([, verse]) => verse.text.includes(phrase));
-  if (!match) return false;
-  select.value = match[0];
-  return true;
-}
-
-function refreshPreview() {
-  if (recordingBlob) {
-    deleteButton.textContent = "Discard recording";
-    deleteButton.disabled = false;
-    return;
-  }
-  if (recordingVerseNumber()) {
-    playback.src = verseUrls.get(select.value) || "";
-    deleteButton.textContent = "Delete number audio";
-    deleteButton.disabled = !verseUrls.has(select.value);
-  } else {
-    const key = currentKey();
-    playback.src = phraseUrls.get(key) || "";
-    deleteButton.textContent = "Delete phrase";
-    deleteButton.disabled = !phraseRecords.has(key);
-  }
-}
-
-function resetPhraseState() {
-  recordingBlob = undefined;
-  saveButton.disabled = true;
-  phraseField.hidden = recordingVerseNumber();
-  refreshPreview();
-  if (recordingVerseNumber()) {
-    setStatus(`Ready to record the spoken number Genesis ${select.value}.`);
-  } else {
-    const hasText = Boolean(normalizePhrase(phraseText.value));
-    const valid = phraseIsValid();
-    setStatus(hasText ? (valid ? `Phrase found in Genesis ${select.value}. Ready to record.` : "Phrase not found. Copy an exact phrase from one of the displayed verses.") : "", hasText && !valid);
-  }
-}
-
-audioToggle.addEventListener("click", () => {
-  audioEnabled = !audioEnabled;
-  audioToggle.setAttribute("aria-pressed", String(audioEnabled));
-  audioToggle.textContent = `Audio: ${audioEnabled ? "On" : "Off"}`;
-  if (!audioEnabled) activeAudio?.pause();
-});
-
-document.querySelector("#openStudio").addEventListener("click", () => {
-  if (!dialog.open) dialog.show();
-});
-document.querySelector("#closeStudio").addEventListener("click", () => dialog.close());
-document.querySelector("#unlockForm").addEventListener("submit", event => {
-  event.preventDefault();
-  const error = document.querySelector("#lockError");
-  if (document.querySelector("#studioCode").value !== dialog.dataset.accessCode) {
-    error.textContent = "Incorrect access code.";
-    return;
-  }
-  error.textContent = "";
-  lock.hidden = true;
-  controls.hidden = false;
-  setStatus("Studio unlocked. Copy words from a verse and paste them into the phrase box.");
-});
-
-select.addEventListener("change", () => {
-  phraseText.value = "";
-  resetPhraseState();
-});
-targetType.addEventListener("change", resetPhraseState);
-phraseText.addEventListener("input", () => {
-  detectPhraseVerse();
-  resetPhraseState();
-});
-
-recordButton.addEventListener("click", async () => {
-  if (!recordingVerseNumber() && !phraseIsValid()) {
-    setStatus("Paste an exact phrase from the selected verse before recording.", true);
-    return;
-  }
-  try {
-    recordButton.disabled = true;
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        autoGainControl: false,
-        noiseSuppression: false,
-        echoCancellation: false,
-        channelCount: 1
-      }
-    });
-    startLevelMeter(stream);
-    for (let count = 3; count > 0; count -= 1) {
-      setStatus(`Recording starts in ${count}… Watch the microphone level.`);
-      await wait(1000);
-    }
-    recordingChunks = [];
-    recordingBlob = undefined;
-    mediaRecorder = new MediaRecorder(stream);
-    mediaRecorder.addEventListener("dataavailable", event => {
-      if (event.data.size) recordingChunks.push(event.data);
-    });
-    mediaRecorder.addEventListener("stop", async () => {
-      const rawBlob = new Blob(recordingChunks, { type: mediaRecorder.mimeType || "audio/webm" });
-      setStatus("Normalizing volume…");
-      try {
-        recordingBlob = await normalizeRecording(rawBlob);
-      } catch (error) {
-        console.info(`Normalization unavailable: ${error.message}`);
-        recordingBlob = rawBlob;
-      }
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      previewUrl = URL.createObjectURL(recordingBlob);
-      playback.src = previewUrl;
-      saveButton.disabled = false;
-      refreshPreview();
+    recorder.onstop = async () => {
       stream.getTracks().forEach(track => track.stop());
-      stopLevelMeter();
-      setStatus(recordingVerseNumber()
-        ? `Genesis ${select.value} recording ready. Play it back, then save or record again.`
-        : "Phrase recording ready. Play it back, then save or record again.");
-    });
-    mediaRecorder.start();
-    stopButton.disabled = false;
-    setStatus(recordingVerseNumber() ? `Recording Genesis ${select.value}…` : "Recording phrase…");
+      button.disabled = true;
+      button.textContent = '↑';
+      status.textContent = `Saving recording for group ${groupId}…`;
+      try {
+        const blob = new Blob(chunks, { type: recorder.mimeType || mimeType || 'audio/webm' });
+        await uploadRecording(groupId, blob);
+        status.textContent = `Recording saved for group ${groupId}.`;
+      } catch (error) {
+        status.textContent = 'The recording could not be saved. Please record this group again.';
+      } finally {
+        activeRecorder = null;
+        updateDisplay();
+      }
+    };
+    activeRecorder = { groupId, recorder };
+    recorder.start(1000);
+    button.classList.add('recording');
+    button.textContent = '■';
+    button.setAttribute('aria-label', `Stop recording group ${groupId}`);
+    status.textContent = `Recording group ${groupId} in high quality. Select stop when finished.`;
   } catch (error) {
-    recordButton.disabled = false;
-    stopLevelMeter();
-    setStatus(`Microphone unavailable: ${error.message}`, true);
+    status.textContent = 'Microphone access is required to record this group.';
   }
-});
+}
 
-stopButton.addEventListener("click", () => {
-  if (mediaRecorder?.state === "recording") mediaRecorder.stop();
-  recordButton.disabled = false;
-  stopButton.disabled = true;
-});
+function playGroupRecording(button) {
+  stopRecordedVerse();
+  const groupId = Number(button.dataset.groupId);
+  const recording = recordings.get(groupId);
+  if (!recording) return;
+  const audio = new Audio(`${recordingUrl(recording.object_path)}?v=${Date.now()}`);
+  button.disabled = true;
+  audio.onended = () => { button.disabled = false; };
+  audio.onerror = () => {
+    button.disabled = false;
+    status.textContent = 'The saved group recording could not be played.';
+  };
+  audio.play();
+  status.textContent = `Playing recording for group ${groupId}.`;
+}
 
-saveButton.addEventListener("click", async () => {
-  if (!recordingBlob || (!recordingVerseNumber() && !phraseIsValid())) return;
-  try {
-    saveButton.disabled = true;
-    setStatus("Saving…");
-    if (recordingVerseNumber()) {
-      await useStore(VERSE_STORE, "readwrite", store => store.put(recordingBlob, select.value));
-    } else {
-      const text = normalizePhrase(phraseText.value);
-      const key = phraseKey(select.value, text);
-      await useStore(PHRASE_STORE, "readwrite", store => store.put({ verseId: select.value, text, blob: recordingBlob }, key));
+function stopHoveredGroup() {
+  if (hoveredGroupAudio) {
+    hoveredGroupAudio.pause();
+    hoveredGroupAudio.src = '';
+  }
+  hoveredGroupAudio = null;
+  hoveredGroupId = null;
+  if (!activePlaylist) setPlayingGroup(null);
+}
+
+function playHoveredGroup(groupId) {
+  if (hoveredGroupId === groupId) return;
+  stopRecordedVerse();
+  stopHoveredGroup();
+  const recording = recordings.get(groupId);
+  if (!recording) return;
+
+  const audio = new Audio(currentRecordingUrl(recording));
+  hoveredGroupId = groupId;
+  hoveredGroupAudio = audio;
+  setPlayingGroup(groupId);
+  status.textContent = `Playing highlighted group ${groupId}.`;
+  audio.onended = () => {
+    if (hoveredGroupAudio !== audio) return;
+    hoveredGroupAudio = null;
+    hoveredGroupId = null;
+    setPlayingGroup(null);
+  };
+  audio.onerror = () => {
+    if (hoveredGroupAudio !== audio) return;
+    stopHoveredGroup();
+    status.textContent = 'The saved group recording could not be played.';
+  };
+  audio.play().catch(() => {
+    if (hoveredGroupAudio !== audio) return;
+    stopHoveredGroup();
+  });
+}
+
+function displayText(text) {
+  if (scriptMode) return text.normalize('NFD').replace(/[\u0591-\u05BD\u05BF-\u05C7]/g, '');
+  if (!showTrope) return text.replace(/[\u0591-\u05AF]/g, '');
+  return text;
+}
+
+function updateDisplay() {
+  document.body.classList.toggle('script-mode', scriptMode);
+  tropeToggle.classList.toggle('active', showTrope);
+  tropeToggle.setAttribute('aria-pressed', String(showTrope));
+  scriptToggle.classList.toggle('active', scriptMode);
+  scriptToggle.setAttribute('aria-pressed', String(scriptMode));
+  renderVerses(sourceVerses);
+}
+
+function renderVerses(texts) {
+  passage.replaceChildren();
+  texts.forEach((text, index) => {
+    const number = index + 1;
+    if (ALIYAH_HEADINGS.has(number)) {
+      const heading = document.createElement('h2');
+      heading.className = 'aliyah-heading';
+      heading.textContent = ALIYAH_HEADINGS.get(number);
+      passage.append(heading);
     }
-    recordingBlob = undefined;
-    await refreshAudio();
-    setStatus(recordingVerseNumber()
-      ? `Number audio saved. Hover over ${select.value} to play it.`
-      : "Phrase saved. Hover over any highlighted word in the phrase to play it.");
-  } catch (error) {
-    saveButton.disabled = false;
-    setStatus(error.message, true);
-  }
-});
+    const row = document.createElement('div');
+    row.className = 'verse-row';
+    row.dir = 'rtl';
 
-deleteButton.addEventListener("click", async () => {
-  if (recordingBlob) {
-    recordingBlob = undefined;
-    saveButton.disabled = true;
-    refreshPreview();
-    setStatus("Unsaved recording discarded.");
+    const button = document.createElement('button');
+    button.className = 'verse-number';
+    button.type = 'button';
+    button.textContent = number;
+    button.dataset.verse = number;
+    button.setAttribute('aria-label', `Play all saved group recordings for verse ${number}`);
+
+    const words = document.createElement('span');
+    words.className = 'verse-line';
+    words.lang = 'he';
+    words.dataset.verse = number;
+
+    const displayedText = displayText(text);
+    const tokens = displayedText.trim().split(/\s+/);
+    tokens.forEach((token, wordIndex) => {
+      const word = document.createElement('span');
+      word.className = 'word';
+      word.dataset.word = wordIndex;
+      word.textContent = token;
+      const highlight = highlightForWord(number, wordIndex);
+      if (highlight) {
+        word.classList.add(`highlight-${highlight.color}`);
+        word.dataset.groupId = highlight.id;
+      }
+      words.append(word);
+
+      if (wordIndex < tokens.length - 1) {
+        const space = document.createElement('span');
+        space.className = 'word-space';
+        space.textContent = ' ';
+        const nextHighlight = highlightForWord(number, wordIndex + 1);
+        if (highlight && nextHighlight === highlight) {
+          space.classList.add(`highlight-${highlight.color}`);
+          space.dataset.groupId = highlight.id;
+        }
+        words.append(space);
+      }
+
+      if (!scriptMode && highlight && wordIndex === highlight.end) {
+        const controls = document.createElement('span');
+        controls.className = 'group-audio-controls';
+
+        const recordButton = document.createElement('button');
+        recordButton.type = 'button';
+        recordButton.className = 'group-audio-button record-group';
+        recordButton.dataset.groupId = highlight.id;
+        recordButton.textContent = '●';
+        recordButton.setAttribute('aria-label', `${recordings.has(highlight.id) ? 'Re-record' : 'Record'} highlighted group ${highlight.id}`);
+        recordButton.title = recordings.has(highlight.id) ? 'Re-record this group' : 'Record this group';
+        controls.append(recordButton);
+
+        if (recordings.has(highlight.id)) {
+          const playButton = document.createElement('button');
+          playButton.type = 'button';
+          playButton.className = 'group-audio-button play-group';
+          playButton.dataset.groupId = highlight.id;
+          playButton.textContent = '▶';
+          playButton.setAttribute('aria-label', `Play recording for highlighted group ${highlight.id}`);
+          playButton.title = 'Play saved recording';
+          controls.append(playButton);
+        }
+        words.append(controls);
+      }
+    });
+
+    row.append(button, words);
+    passage.append(row);
+  });
+}
+
+async function loadPointedText() {
+  try {
+    const response = await fetch('https://www.sefaria.org/api/texts/Genesis.41.1-16?context=0');
+    if (!response.ok) throw new Error('Text request failed');
+    const data = await response.json();
+    if (!Array.isArray(data.he) || data.he.length !== 16) throw new Error('Unexpected passage');
+    sourceVerses = data.he.map(stripHtml);
+    updateDisplay();
+  } catch (error) {
+    // The unpointed passage is already visible when the text API is unavailable.
+  }
+}
+
+function resetActiveVerse() {
+  if (!activeVerse) return;
+  activeVerse.audio.pause();
+  activeVerse.audio.ontimeupdate = null;
+  activeVerse.button.classList.remove('playing');
+  activeVerse.button.textContent = activeVerse.number;
+  activeVerse = null;
+}
+
+function stopRecordedVerse(message = '') {
+  if (!activePlaylist) return;
+  activePlaylist.sources?.forEach(source => {
+    try { source.stop(); } catch (error) { /* The source may already have ended. */ }
+  });
+  activePlaylist.timers?.forEach(clearTimeout);
+  activePlaylist.finishCurrent?.();
+  activePlaylist.button.classList.remove('playing');
+  activePlaylist.button.textContent = activePlaylist.number;
+  setPlayingGroup(null);
+  activePlaylist = null;
+  if (message) status.textContent = message;
+}
+
+function setPlayingGroup(groupId) {
+  passage.querySelectorAll('.word.audio-active, .word-space.audio-active').forEach(element => element.classList.remove('audio-active'));
+  if (!groupId) return;
+  passage.querySelectorAll(`[data-group-id="${groupId}"]`).forEach(element => element.classList.add('audio-active'));
+}
+
+function speechBounds(buffer) {
+  const windowSize = Math.max(1, Math.floor(buffer.sampleRate * .01));
+  const totalWindows = Math.ceil(buffer.length / windowSize);
+  const levels = [];
+  for (let windowIndex = 0; windowIndex < totalWindows; windowIndex += 1) {
+    const start = windowIndex * windowSize;
+    const end = Math.min(start + windowSize, buffer.length);
+    let sumSquares = 0;
+    let sampleCount = 0;
+    for (let channel = 0; channel < buffer.numberOfChannels; channel += 1) {
+      const samples = buffer.getChannelData(channel);
+      for (let index = start; index < end; index += 1) {
+        sumSquares += samples[index] * samples[index];
+        sampleCount += 1;
+      }
+    }
+    levels.push(Math.sqrt(sumSquares / sampleCount));
+  }
+
+  const threshold = Math.max(.003, Math.max(...levels) * .035);
+  const firstWindow = levels.findIndex(level => level >= threshold);
+  if (firstWindow < 0) return { start: 0, duration: buffer.duration };
+  const lastWindow = levels.findLastIndex(level => level >= threshold);
+  const start = Math.max(0, (firstWindow * windowSize / buffer.sampleRate) - .06);
+  const end = Math.min(buffer.duration, ((lastWindow + 1) * windowSize / buffer.sampleRate) + .06);
+  return { start, duration: Math.max(.1, end - start) };
+}
+
+async function prepareGroupAudio(group, audioContext) {
+  const recording = recordings.get(group.id);
+  const response = await fetch(currentRecordingUrl(recording));
+  if (!response.ok) throw new Error('Recording download failed');
+  const buffer = await audioContext.decodeAudioData(await response.arrayBuffer());
+  return { group, buffer, ...speechBounds(buffer) };
+}
+
+async function playRecordedVerse(button) {
+  const number = Number(button.dataset.verse);
+  if (activePlaylist?.number === number) {
+    stopRecordedVerse(`Verse ${number} playback stopped.`);
     return;
   }
-  if (recordingVerseNumber()) {
-    if (!verseUrls.has(select.value) || !confirm(`Delete the number audio for Genesis ${select.value}?`)) return;
-    await useStore(VERSE_STORE, "readwrite", store => store.delete(select.value));
-  } else {
-    const key = currentKey();
-    if (!phraseRecords.has(key) || !confirm(`Delete this phrase recording?`)) return;
-    await useStore(PHRASE_STORE, "readwrite", store => store.delete(key));
+
+  stopRecordedVerse();
+  stopHoveredGroup();
+  resetActiveVerse();
+  const groups = highlights
+    .filter(group => group.verse === number && recordings.has(group.id))
+    .sort((a, b) => a.start - b.start);
+
+  if (!groups.length) {
+    status.textContent = `Verse ${number} has no saved group recordings.`;
+    return;
   }
-  await refreshAudio();
-  setStatus(recordingVerseNumber() ? "Number recording deleted." : "Phrase recording deleted.");
+
+  const token = Symbol('verse-playlist');
+  activePlaylist = { number, button, token, sources: [], timers: [], finishCurrent: null };
+  button.classList.add('playing');
+  button.textContent = '■';
+
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!playbackAudioContext) {
+      try {
+        playbackAudioContext = new AudioContextClass({ sampleRate: 48000 });
+      } catch (error) {
+        playbackAudioContext = new AudioContextClass();
+      }
+    }
+    await playbackAudioContext.resume();
+    status.textContent = `Preparing verse ${number}…`;
+    const prepared = await Promise.all(groups.map(group => prepareGroupAudio(group, playbackAudioContext)));
+    if (activePlaylist?.token !== token) return;
+
+    let startAt = playbackAudioContext.currentTime + .08;
+    const finished = new Promise(resolve => { activePlaylist.finishCurrent = resolve; });
+    prepared.forEach((clip, index) => {
+      const source = playbackAudioContext.createBufferSource();
+      source.buffer = clip.buffer;
+      source.connect(playbackAudioContext.destination);
+      source.start(startAt, clip.start, clip.duration);
+      activePlaylist.sources.push(source);
+      const delay = Math.max(0, (startAt - playbackAudioContext.currentTime) * 1000);
+      activePlaylist.timers.push(setTimeout(() => {
+        if (activePlaylist?.token !== token) return;
+        setPlayingGroup(clip.group.id);
+        status.textContent = `Playing verse ${number}: group ${index + 1} of ${groups.length}.`;
+      }, delay));
+      if (index === prepared.length - 1) source.onended = activePlaylist.finishCurrent;
+      startAt += clip.duration;
+    });
+    await finished;
+
+    if (activePlaylist?.token === token) {
+      stopRecordedVerse(`Verse ${number} complete.`);
+    }
+  } catch (error) {
+    if (activePlaylist?.token === token) {
+      stopRecordedVerse(`A saved recording in verse ${number} could not be played.`);
+    }
+  }
+}
+
+async function playVerse(button) {
+  const number = Number(button.dataset.verse);
+  if (activeVerse?.number === number && !activeVerse.audio.paused) {
+    resetActiveVerse();
+    status.textContent = `Verse ${number} paused.`;
+    return;
+  }
+
+  resetActiveVerse();
+  status.textContent = `Loading verse ${number}…`;
+  button.disabled = true;
+
+  try {
+    let audio = audioByVerse.get(number);
+    if (!audio) {
+      const response = await fetch(`https://www.sefaria.org/api/related/Genesis.41.${number}?with_sheet_links=0`);
+      if (!response.ok) throw new Error('Recording request failed');
+      const recording = findRecording(await response.json(), number);
+      if (!recording) throw new Error('Recording not found');
+      audio = new Audio(recording.url);
+      audio.clipStart = recording.start;
+      audio.clipEnd = recording.end;
+      audio.preload = 'auto';
+      audioByVerse.set(number, audio);
+    }
+
+    activeVerse = { number, audio, button };
+    button.classList.add('playing');
+    button.textContent = '■';
+    audio.currentTime = audio.clipStart || 0;
+    audio.ontimeupdate = () => {
+      if (audio.clipEnd > audio.clipStart && audio.currentTime >= audio.clipEnd) {
+        audio.pause();
+        audio.dispatchEvent(new Event('ended'));
+      }
+    };
+    audio.onended = () => {
+      if (activeVerse?.audio !== audio) return;
+      resetActiveVerse();
+      status.textContent = `Verse ${number} complete.`;
+    };
+    await audio.play();
+    status.textContent = `Playing verse ${number}.`;
+  } catch (error) {
+    resetActiveVerse();
+    status.innerHTML = `Verse ${number} could not be loaded here. <a href="https://www.sefaria.org/Genesis.41.${number}?lang=bi&with=Torah%20Readings" target="_blank" rel="noopener">Listen on Sefaria</a>.`;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+passage.addEventListener('click', event => {
+  const recordButton = event.target.closest('.record-group');
+  if (recordButton) {
+    toggleGroupRecording(recordButton);
+    return;
+  }
+  const playButton = event.target.closest('.play-group');
+  if (playButton) {
+    playGroupRecording(playButton);
+    return;
+  }
+  const button = event.target.closest('.verse-number');
+  if (button) playRecordedVerse(button);
 });
 
-dialog.addEventListener("close", () => {
-  if (mediaRecorder?.state === "recording") mediaRecorder.stop();
+passage.addEventListener('mouseover', event => {
+  const target = event.target.closest('.word[data-group-id], .word-space[data-group-id]');
+  if (!target || !passage.contains(target)) return;
+  playHoveredGroup(Number(target.dataset.groupId));
 });
 
-const dragHandle = document.querySelector("#studioDragHandle");
-dragHandle.addEventListener("pointerdown", event => {
-  const rect = dialog.getBoundingClientRect();
-  const offsetX = event.clientX - rect.left;
-  const offsetY = event.clientY - rect.top;
-  dragHandle.setPointerCapture(event.pointerId);
-
-  const move = moveEvent => {
-    const maxLeft = Math.max(0, window.innerWidth - dialog.offsetWidth);
-    const maxTop = Math.max(0, window.innerHeight - 48);
-    dialog.style.inset = `${Math.min(Math.max(0, moveEvent.clientY - offsetY), maxTop)}px auto auto ${Math.min(Math.max(0, moveEvent.clientX - offsetX), maxLeft)}px`;
-  };
-  const stop = () => {
-    dragHandle.removeEventListener("pointermove", move);
-    dragHandle.removeEventListener("pointerup", stop);
-    dragHandle.removeEventListener("pointercancel", stop);
-  };
-  dragHandle.addEventListener("pointermove", move);
-  dragHandle.addEventListener("pointerup", stop);
-  dragHandle.addEventListener("pointercancel", stop);
+passage.addEventListener('mouseout', event => {
+  const target = event.target.closest('.word[data-group-id], .word-space[data-group-id]');
+  if (!target || Number(target.dataset.groupId) !== hoveredGroupId) return;
+  const nextTarget = event.relatedTarget?.closest?.('.word[data-group-id], .word-space[data-group-id]');
+  if (nextTarget && Number(nextTarget.dataset.groupId) === hoveredGroupId) return;
+  stopHoveredGroup();
 });
 
-refreshAudio().catch(error => setStatus(`Audio storage unavailable: ${error.message}`, true));
+passage.addEventListener('mouseup', async () => {
+  if (scriptMode) return;
+  if (!highlightsReady) {
+    status.textContent = 'Please wait for saved highlights to finish loading.';
+    return;
+  }
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed || !selection.rangeCount) return;
+
+  const range = selection.getRangeAt(0);
+  const selectedWords = [...passage.querySelectorAll('.verse-line .word')].filter(word => {
+    try {
+      return range.intersectsNode(word);
+    } catch (error) {
+      return false;
+    }
+  });
+  if (!selectedWords.length) return;
+
+  const line = selectedWords[0].closest('.verse-line');
+  if (!selectedWords.every(word => word.closest('.verse-line') === line)) {
+    selection.removeAllRanges();
+    status.textContent = 'Highlight one verse at a time.';
+    return;
+  }
+
+  const verse = Number(line.dataset.verse);
+  const indices = selectedWords.map(word => Number(word.dataset.word));
+  const start = Math.min(...indices);
+  const end = Math.max(...indices);
+  const overlapping = highlights.filter(item => item.verse === verse && item.start <= end && item.end >= start);
+
+  if (overlapping.length) {
+    try {
+      const ids = overlapping.map(item => item.id).filter(Boolean).join(',');
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/${HIGHLIGHT_TABLE}?id=in.(${ids})`, {
+        method: 'DELETE',
+        headers: supabaseHeaders()
+      });
+      if (!response.ok) throw new Error('Delete failed');
+      highlights = highlights.filter(item => !overlapping.includes(item));
+      selection.removeAllRanges();
+      updateDisplay();
+      status.textContent = `Cleared highlighting in verse ${verse}.`;
+    } catch (error) {
+      status.textContent = 'The highlight could not be cleared. Please try again.';
+    }
+    return;
+  }
+
+  const nextColor = highlights.length ? (highlights.at(-1).color % 2) + 1 : 1;
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/${HIGHLIGHT_TABLE}`, {
+      method: 'POST',
+      headers: supabaseHeaders({ Prefer: 'return=representation' }),
+      body: JSON.stringify({ passage_key: PASSAGE_KEY, verse, start_word: start, end_word: end, color: nextColor })
+    });
+    if (!response.ok) throw new Error('Save failed');
+    const [saved] = await response.json();
+    highlights.push({ id: saved.id, verse, start, end, color: nextColor });
+    selection.removeAllRanges();
+    updateDisplay();
+    status.textContent = `Highlighted and saved a word group in verse ${verse}.`;
+  } catch (error) {
+    status.textContent = 'The highlight could not be saved. Please try again.';
+  }
+});
+
+tropeToggle.addEventListener('click', () => {
+  showTrope = !showTrope;
+  updateDisplay();
+});
+
+scriptToggle.addEventListener('click', () => {
+  scriptMode = !scriptMode;
+  updateDisplay();
+});
+
+updateDisplay();
+loadPointedText();
+loadRemoteHighlights();
