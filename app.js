@@ -494,10 +494,8 @@ function speechBounds(buffer) {
   const threshold = Math.max(.003, Math.max(...levels) * .035);
   const firstWindow = levels.findIndex(level => level >= threshold);
   if (firstWindow < 0) return { start: 0, duration: buffer.duration };
-  const lastWindow = levels.findLastIndex(level => level >= threshold);
   const start = Math.max(0, (firstWindow * windowSize / buffer.sampleRate) - .06);
-  const end = Math.min(buffer.duration, ((lastWindow + 1) * windowSize / buffer.sampleRate) + .06);
-  return { start, duration: Math.max(.1, end - start) };
+  return { start, duration: Math.max(.1, buffer.duration - start) };
 }
 
 async function prepareGroupAudio(group, audioContext) {
