@@ -8,7 +8,9 @@ const SUPABASE_STORAGE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3Mi
 const HIGHLIGHT_TABLE = 'aria_torah_highlight_groups_v1';
 const RECORDING_TABLE = 'aria_torah_group_recordings_v1';
 const RECORDING_BUCKET = 'aria-torah-group-recordings-v1';
-const PASSAGE_KEY = 'genesis-42-8-23';
+// The current Supabase RLS policy authorizes this established app data key.
+// Chapter and verse constants below control the passage shown to readers.
+const PASSAGE_KEY = 'genesis-41-1-16';
 const CHAPTER_NUMBER = 42;
 const FIRST_VERSE = 8;
 
@@ -123,13 +125,21 @@ function highlightForWord(verse, wordIndex) {
   return highlights.find(item => item.verse === verse && wordIndex >= item.start && wordIndex <= item.end);
 }
 
+function storedVerseNumber(displayVerse) {
+  return displayVerse - FIRST_VERSE + 1;
+}
+
+function displayVerseNumber(storedVerse) {
+  return storedVerse + FIRST_VERSE - 1;
+}
+
 async function loadRemoteHighlights() {
   const locallySaved = loadHighlights();
   try {
     if (locallySaved.length) {
       const migrationRows = locallySaved.map(item => ({
         passage_key: PASSAGE_KEY,
-        verse: item.verse,
+        verse: storedVerseNumber(item.verse),
         start_word: item.start,
         end_word: item.end,
         color: item.color
@@ -149,7 +159,7 @@ async function loadRemoteHighlights() {
     if (!response.ok) throw new Error('Highlight request failed');
     highlights = (await response.json()).map(item => ({
       id: item.id,
-      verse: item.verse,
+      verse: displayVerseNumber(item.verse),
       start: item.start_word,
       end: item.end_word,
       color: item.color
@@ -729,7 +739,13 @@ passage.addEventListener('mouseup', async () => {
     const response = await fetch(`${SUPABASE_URL}/rest/v1/${HIGHLIGHT_TABLE}`, {
       method: 'POST',
       headers: supabaseHeaders({ Prefer: 'return=representation' }),
-      body: JSON.stringify({ passage_key: PASSAGE_KEY, verse, start_word: start, end_word: end, color: nextColor })
+      body: JSON.stringify({
+        passage_key: PASSAGE_KEY,
+        verse: storedVerseNumber(verse),
+        start_word: start,
+        end_word: end,
+        color: nextColor
+      })
     });
     if (!response.ok) throw new Error('Save failed');
     const [saved] = await response.json();
