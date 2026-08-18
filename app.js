@@ -8,9 +8,11 @@ const SUPABASE_STORAGE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3Mi
 const HIGHLIGHT_TABLE = 'aria_torah_highlight_groups_v1';
 const RECORDING_TABLE = 'aria_torah_group_recordings_v1';
 const RECORDING_BUCKET = 'aria-torah-group-recordings-v1';
-const PASSAGE_KEY = 'genesis-41-1-16';
+const PASSAGE_KEY = 'genesis-42-8-23';
+const CHAPTER_NUMBER = 42;
+const FIRST_VERSE = 8;
 
-const FALLBACK_VERSES = [
+const LEGACY_FALLBACK_VERSES = [
   'וַיְהִי מִקֵּץ שְׁנָתַיִם יָמִים וּפַרְעֹה חֹלֵם וְהִנֵּה עֹמֵד עַל־הַיְאֹֽר׃',
   'וְהִנֵּה מִן־הַיְאֹר עֹלֹת שֶׁבַע פָּרוֹת יְפוֹת מַרְאֶה וּבְרִיאֹת בָּשָׂר וַתִּרְעֶינָה בָּאָֽחוּ׃',
   'וְהִנֵּה שֶׁבַע פָּרוֹת אֲחֵרוֹת עֹלוֹת אַחֲרֵיהֶן מִן־הַיְאֹר רָעוֹת מַרְאֶה וְדַקּוֹת בָּשָׂר וַֽתַּעֲמֹדְנָה אֵצֶל הַפָּרוֹת עַל־שְׂפַת הַיְאֹֽר׃',
@@ -29,13 +31,32 @@ const FALLBACK_VERSES = [
   'וַיַּעַן יוֹסֵף אֶת־פַּרְעֹה לֵאמֹר בִּלְעָדָי אֱלֹהִים יַעֲנֶה אֶת־שְׁלוֹם פַּרְעֹֽה׃'
 ];
 
+const FALLBACK_VERSES = [
+  'וַיַּכֵּ֥ר יוֹסֵ֖ף אֶת־אֶחָ֑יו וְהֵ֖ם לֹ֥א הִכִּרֻֽהוּ׃',
+  'וַיִּזְכֹּ֣ר יוֹסֵ֔ף אֵ֚ת הַחֲלֹמ֔וֹת אֲשֶׁ֥ר חָלַ֖ם לָהֶ֑ם וַיֹּ֤אמֶר אֲלֵהֶם֙ מְרַגְּלִ֣ים אַתֶּ֔ם לִרְא֛וֹת אֶת־עֶרְוַ֥ת הָאָ֖רֶץ בָּאתֶֽם׃',
+  'וַיֹּאמְר֥וּ אֵלָ֖יו לֹ֣א אֲדֹנִ֑י וַעֲבָדֶ֥יךָ בָּ֖אוּ לִשְׁבׇּר־אֹֽכֶל׃',
+  'כֻּלָּ֕נוּ בְּנֵ֥י אִישׁ־אֶחָ֖ד נָ֑חְנוּ כֵּנִ֣ים אֲנַ֔חְנוּ לֹא־הָי֥וּ עֲבָדֶ֖יךָ מְרַגְּלִֽים׃',
+  'וַיֹּ֖אמֶר אֲלֵהֶ֑ם לֹ֕א כִּֽי־עֶרְוַ֥ת הָאָ֖רֶץ בָּאתֶ֥ם לִרְאֽוֹת׃',
+  'וַיֹּאמְר֗וּ שְׁנֵ֣ים עָשָׂר֩ עֲבָדֶ֨יךָ אַחִ֧ים ׀ אֲנַ֛חְנוּ בְּנֵ֥י אִישׁ־אֶחָ֖ד בְּאֶ֣רֶץ כְּנָ֑עַן וְהִנֵּ֨ה הַקָּטֹ֤ן אֶת־אָבִ֙ינוּ֙ הַיּ֔וֹם וְהָאֶחָ֖ד אֵינֶֽנּוּ׃',
+  'וַיֹּ֥אמֶר אֲלֵהֶ֖ם יוֹסֵ֑ף ה֗וּא אֲשֶׁ֨ר דִּבַּ֧רְתִּי אֲלֵכֶ֛ם לֵאמֹ֖ר מְרַגְּלִ֥ים אַתֶּֽם׃',
+  'בְּזֹ֖את תִּבָּחֵ֑נוּ חֵ֤י פַרְעֹה֙ אִם־תֵּצְא֣וּ מִזֶּ֔ה כִּ֧י אִם־בְּב֛וֹא אֲחִיכֶ֥ם הַקָּטֹ֖ן הֵֽנָּה׃',
+  'שִׁלְח֨וּ מִכֶּ֣ם אֶחָד֮ וְיִקַּ֣ח אֶת־אֲחִיכֶם֒ וְאַתֶּם֙ הֵאָ֣סְר֔וּ וְיִבָּֽחֲנוּ֙ דִּבְרֵיכֶ֔ם הַֽאֱמֶ֖ת אִתְּכֶ֑ם וְאִם־לֹ֕א חֵ֣י פַרְעֹ֔ה כִּ֥י מְרַגְּלִ֖ים אַתֶּֽם׃',
+  'וַיֶּאֱסֹ֥ף אֹתָ֛ם אֶל־מִשְׁמָ֖ר שְׁלֹ֥שֶׁת יָמִֽים׃',
+  'וַיֹּ֨אמֶר אֲלֵהֶ֤ם יוֹסֵף֙ בַּיּ֣וֹם הַשְּׁלִישִׁ֔י זֹ֥את עֲשׂ֖וּ וִֽחְי֑וּ אֶת־הָאֱלֹהִ֖ים אֲנִ֥י יָרֵֽא׃',
+  'אִם־כֵּנִ֣ים אַתֶּ֔ם אֲחִיכֶ֣ם אֶחָ֔ד יֵאָסֵ֖ר בְּבֵ֣ית מִשְׁמַרְכֶ֑ם וְאַתֶּם֙ לְכ֣וּ הָבִ֔יאוּ שֶׁ֖בֶר רַעֲב֥וֹן בָּתֵּיכֶֽם׃',
+  'וְאֶת־אֲחִיכֶ֤ם הַקָּטֹן֙ תָּבִ֣יאוּ אֵלַ֔י וְיֵאָמְנ֥וּ דִבְרֵיכֶ֖ם וְלֹ֣א תָמ֑וּתוּ וַיַּעֲשׂוּ־כֵֽן׃',
+  'וַיֹּאמְר֞וּ אִ֣ישׁ אֶל־אָחִ֗יו אֲבָל֮ אֲשֵׁמִ֣ים ׀ אֲנַ֘חְנוּ֮ עַל־אָחִ֒ינוּ֒ אֲשֶׁ֨ר רָאִ֜ינוּ צָרַ֥ת נַפְשׁ֛וֹ בְּהִתְחַֽנְנ֥וֹ אֵלֵ֖ינוּ וְלֹ֣א שָׁמָ֑עְנוּ עַל־כֵּן֙ בָּ֣אָה אֵלֵ֔ינוּ הַצָּרָ֖ה הַזֹּֽאת׃',
+  'וַיַּ֩עַן֩ רְאוּבֵ֨ן אֹתָ֜ם לֵאמֹ֗ר הֲלוֹא֩ אָמַ֨רְתִּי אֲלֵיכֶ֧ם ׀ לֵאמֹ֛ר אַל־תֶּחֶטְא֥וּ בַיֶּ֖לֶד וְלֹ֣א שְׁמַעְתֶּ֑ם וְגַם־דָּמ֖וֹ הִנֵּ֥ה נִדְרָֽשׁ׃',
+  'וְהֵם֙ לֹ֣א יָֽדְע֔וּ כִּ֥י שֹׁמֵ֖עַ יוֹסֵ֑ף כִּ֥י הַמֵּלִ֖יץ בֵּינֹתָֽם׃'
+];
+
 const audioByVerse = new Map();
 let activeVerse = null;
 let activePlaylist = null;
 let sourceVerses = FALLBACK_VERSES;
 let showTrope = true;
 let scriptMode = false;
-const HIGHLIGHT_STORAGE_KEY = 'brady-torah-highlights-v1';
+const HIGHLIGHT_STORAGE_KEY = 'brady-torah-highlights-genesis-42-8-23-v1';
 let highlights = loadHighlights();
 let highlightsReady = false;
 const recordings = new Map();
@@ -44,10 +65,10 @@ let playbackAudioContext = null;
 let hoveredGroupAudio = null;
 let hoveredGroupId = null;
 const ALIYAH_HEADINGS = new Map([
-  [1, 'Aliyah 1'],
-  [5, 'Aliyah 2'],
-  [9, 'Aliyah 3'],
-  [13, 'Aliyah 4']
+  [8, 'Aliyah 1'],
+  [12, 'Aliyah 2'],
+  [16, 'Aliyah 3'],
+  [20, 'Aliyah 4']
 ]);
 
 function findRecording(value, verseNumber) {
@@ -59,7 +80,7 @@ function findRecording(value, verseNumber) {
     const url = strings.find(child => /\.(mp3|m4a|ogg|wav)(?:[?#]|$)/i.test(child));
     if (url) {
       const description = JSON.stringify(item);
-      const exactRef = new RegExp(`Genesis(?:\\.| )41(?:\\.|:)${verseNumber}(?!\\d)`, 'i');
+      const exactRef = new RegExp(`Genesis(?:\\.| )${CHAPTER_NUMBER}(?:\\.|:)${verseNumber}(?!\\d)`, 'i');
       candidates.push({
         url,
         start: Number(item.start_time ?? item.startTime ?? item.start ?? 0),
@@ -349,7 +370,7 @@ function updateDisplay() {
 function renderVerses(texts) {
   passage.replaceChildren();
   texts.forEach((text, index) => {
-    const number = index + 1;
+    const number = index + FIRST_VERSE;
     if (ALIYAH_HEADINGS.has(number)) {
       const heading = document.createElement('h2');
       heading.className = 'aliyah-heading';
@@ -432,7 +453,7 @@ function renderVerses(texts) {
 
 async function loadPointedText() {
   try {
-    const response = await fetch('https://www.sefaria.org/api/texts/Genesis.41.1-16?context=0');
+    const response = await fetch(`https://www.sefaria.org/api/texts/Genesis.${CHAPTER_NUMBER}.${FIRST_VERSE}-23?context=0`);
     if (!response.ok) throw new Error('Text request failed');
     const data = await response.json();
     if (!Array.isArray(data.he) || data.he.length !== 16) throw new Error('Unexpected passage');
@@ -588,7 +609,7 @@ async function playVerse(button) {
   try {
     let audio = audioByVerse.get(number);
     if (!audio) {
-      const response = await fetch(`https://www.sefaria.org/api/related/Genesis.41.${number}?with_sheet_links=0`);
+      const response = await fetch(`https://www.sefaria.org/api/related/Genesis.${CHAPTER_NUMBER}.${number}?with_sheet_links=0`);
       if (!response.ok) throw new Error('Recording request failed');
       const recording = findRecording(await response.json(), number);
       if (!recording) throw new Error('Recording not found');
@@ -618,7 +639,7 @@ async function playVerse(button) {
     status.textContent = `Playing verse ${number}.`;
   } catch (error) {
     resetActiveVerse();
-    status.innerHTML = `Verse ${number} could not be loaded here. <a href="https://www.sefaria.org/Genesis.41.${number}?lang=bi&with=Torah%20Readings" target="_blank" rel="noopener">Listen on Sefaria</a>.`;
+    status.innerHTML = `Verse ${number} could not be loaded here. <a href="https://www.sefaria.org/Genesis.${CHAPTER_NUMBER}.${number}?lang=bi&with=Torah%20Readings" target="_blank" rel="noopener">Listen on Sefaria</a>.`;
   } finally {
     button.disabled = false;
   }
