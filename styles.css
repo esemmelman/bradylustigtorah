@@ -130,6 +130,8 @@ h1 { margin: 0 0 18px; font-size: clamp(1.35rem, 3vw, 2rem); font-weight: 400; }
 
 .audio-toggle input:checked + .audio-toggle-track::after { transform: translateX(18px); }
 .audio-toggle input:focus-visible + .audio-toggle-track { outline: 3px solid rgba(54,90,71,.4); outline-offset: 3px; }
+.audio-toggle:has(input:disabled) { color: var(--muted); cursor: default; }
+.audio-toggle input:disabled + .audio-toggle-track { opacity: .65; }
 
 .display-toggle {
   min-width: 84px;

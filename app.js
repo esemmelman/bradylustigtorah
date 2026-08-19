@@ -372,11 +372,13 @@ function displayText(text) {
 }
 
 function updateDisplay() {
+  if (scriptMode && audioEnabled) setAudioEnabled(false);
   document.body.classList.toggle('script-mode', scriptMode);
   tropeToggle.classList.toggle('active', showTrope);
   tropeToggle.setAttribute('aria-pressed', String(showTrope));
   scriptToggle.classList.toggle('active', scriptMode);
   scriptToggle.setAttribute('aria-pressed', String(scriptMode));
+  audioToggle.disabled = scriptMode;
   renderVerses(sourceVerses);
 }
 
@@ -783,7 +785,7 @@ scriptToggle.addEventListener('click', () => {
 });
 
 audioToggle.addEventListener('change', () => {
-  setAudioEnabled(audioToggle.checked);
+  setAudioEnabled(scriptMode ? false : audioToggle.checked);
 });
 
 updateDisplay();
