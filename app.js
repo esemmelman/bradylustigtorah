@@ -766,18 +766,24 @@ tropeToggle.addEventListener('click', () => {
   updateDisplay();
 });
 
-scriptToggle.addEventListener('click', () => {
-  scriptMode = !scriptMode;
-  updateDisplay();
-});
-
-audioToggle.addEventListener('change', () => {
-  audioEnabled = audioToggle.checked;
-  if (!audioEnabled) {
+function setAudioEnabled(enabled) {
+  audioEnabled = enabled;
+  audioToggle.checked = enabled;
+  if (!enabled) {
     stopHoveredGroup();
     stopRecordedVerse();
     resetActiveVerse();
   }
+}
+
+scriptToggle.addEventListener('click', () => {
+  scriptMode = !scriptMode;
+  if (scriptMode) setAudioEnabled(false);
+  updateDisplay();
+});
+
+audioToggle.addEventListener('change', () => {
+  setAudioEnabled(audioToggle.checked);
 });
 
 updateDisplay();
