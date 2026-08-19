@@ -2,6 +2,7 @@ const passage = document.querySelector('#passage');
 const status = document.querySelector('#status');
 const tropeToggle = document.querySelector('#trope-toggle');
 const scriptToggle = document.querySelector('#script-toggle');
+const audioToggle = document.querySelector('#audio-toggle');
 const SUPABASE_URL = 'https://fgomaujsdblpzxhnnqrg.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 const SUPABASE_STORAGE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnb21hdWpzZGJscHp4aG5ucXJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNjM3MjYsImV4cCI6MjA5OTgzOTcyNn0.1iMPI_7F_8ioNVnuThxqAKfMfD7G4NbyXilXZEERScw';
@@ -58,6 +59,7 @@ let activePlaylist = null;
 let sourceVerses = FALLBACK_VERSES;
 let showTrope = true;
 let scriptMode = false;
+let audioEnabled = true;
 const HIGHLIGHT_STORAGE_KEY = 'brady-torah-highlights-genesis-42-8-23-v1';
 let highlights = loadHighlights();
 let highlightsReady = false;
@@ -334,6 +336,7 @@ function stopHoveredGroup() {
 }
 
 function playHoveredGroup(groupId) {
+  if (!audioEnabled) return;
   if (hoveredGroupId === groupId) return;
   stopRecordedVerse();
   stopHoveredGroup();
@@ -667,7 +670,7 @@ passage.addEventListener('click', event => {
     return;
   }
   const button = event.target.closest('.verse-number');
-  if (button) playRecordedVerse(button);
+  if (button && audioEnabled) playRecordedVerse(button);
 });
 
 passage.addEventListener('mouseover', event => {
@@ -766,6 +769,15 @@ tropeToggle.addEventListener('click', () => {
 scriptToggle.addEventListener('click', () => {
   scriptMode = !scriptMode;
   updateDisplay();
+});
+
+audioToggle.addEventListener('change', () => {
+  audioEnabled = audioToggle.checked;
+  if (!audioEnabled) {
+    stopHoveredGroup();
+    stopRecordedVerse();
+    resetActiveVerse();
+  }
 });
 
 updateDisplay();

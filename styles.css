@@ -82,6 +82,55 @@ h1 { margin: 0 0 18px; font-size: clamp(1.35rem, 3vw, 2rem); font-weight: 400; }
   padding-bottom: 18px;
 }
 
+.display-controls-spacer { flex: 1; }
+
+.audio-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--ink);
+  cursor: pointer;
+  font: 600 .8rem/1 Arial, sans-serif;
+}
+
+.audio-toggle input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.audio-toggle-track {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border: 1px solid #cab98f;
+  border-radius: 999px;
+  background: #e1d8c5;
+  transition: background .16s, border-color .16s;
+}
+
+.audio-toggle-track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(38,48,38,.35);
+  transition: transform .16s;
+}
+
+.audio-toggle input:checked + .audio-toggle-track {
+  border-color: #294737;
+  background: var(--green);
+}
+
+.audio-toggle input:checked + .audio-toggle-track::after { transform: translateX(18px); }
+.audio-toggle input:focus-visible + .audio-toggle-track { outline: 3px solid rgba(54,90,71,.4); outline-offset: 3px; }
+
 .display-toggle {
   min-width: 84px;
   border: 1px solid #cab98f;
@@ -176,7 +225,7 @@ h1 { margin: 0 0 18px; font-size: clamp(1.35rem, 3vw, 2rem); font-weight: 400; }
 .word-space.audio-active { font-weight: 700; }
 
 .group-audio-controls {
-  display: inline-flex;
+  display: none;
   direction: ltr;
   gap: 3px;
   margin: 0 .2em;
