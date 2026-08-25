@@ -70,9 +70,9 @@ let hoveredGroupAudio = null;
 let hoveredGroupId = null;
 const ALIYAH_HEADINGS = new Map([
   [8, 'Aliyah 1'],
-  [12, 'Aliyah 2'],
-  [16, 'Aliyah 3'],
-  [20, 'Aliyah 4']
+  [13, 'Aliyah 2'],
+  [17, 'Aliyah 3'],
+  [21, 'Aliyah 4']
 ]);
 
 function findRecording(value, verseNumber) {
