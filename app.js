@@ -234,6 +234,10 @@ async function uploadRecording(groupId, blob) {
 }
 
 async function toggleGroupRecording(button) {
+  if (window.passageRecordingBusy) {
+    status.textContent = 'Stop the passage recording before recording a group.';
+    return;
+  }
   if (!highlightsReady) {
     status.textContent = 'Please wait for saved groups to finish loading.';
     return;
@@ -310,6 +314,7 @@ async function toggleGroupRecording(button) {
 }
 
 function playGroupRecording(button) {
+  if (window.passageRecordingBusy) return;
   stopRecordedVerse();
   const groupId = Number(button.dataset.groupId);
   const recording = recordings.get(groupId);
@@ -336,6 +341,7 @@ function stopHoveredGroup() {
 }
 
 function playHoveredGroup(groupId) {
+  if (window.passageRecordingBusy) return;
   if (!audioEnabled) return;
   if (hoveredGroupId === groupId) return;
   stopRecordedVerse();
@@ -610,6 +616,7 @@ async function playRecordedVerse(button) {
 }
 
 async function playVerse(button) {
+  if (window.passageRecordingBusy) return;
   const number = Number(button.dataset.verse);
   if (activeVerse?.number === number && !activeVerse.audio.paused) {
     resetActiveVerse();
