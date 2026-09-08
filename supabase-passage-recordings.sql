@@ -15,3 +15,11 @@ create policy current_recording_only on public.brady_torah_passage_recordings_v1
 for all to anon
 using (id::text = (current_setting('request.headers', true)::jsonb ->> 'x-recording-id'))
 with check (id::text = (current_setting('request.headers', true)::jsonb ->> 'x-recording-id'));
+
+-- Applied with migration brady_recording_name_pacific_time_and_playback.
+update public.brady_torah_passage_recordings_v1 set name = 'Brady' where name <> 'Brady';
+alter table public.brady_torah_passage_recordings_v1
+  alter column name set default 'Brady',
+  add constraint brady_recording_fixed_name check (name = 'Brady'),
+  add column start_time_pacific timestamp generated always as (start_time at time zone 'America/Los_Angeles') stored,
+  add column playback_url text generated always as ('https://esemmelman.github.io/bradytorah/recording.html#' || id::text) stored;

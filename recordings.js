@@ -58,27 +58,12 @@
     list.replaceChildren();
     const row = document.createElement('tr');
     const cells = Array.from({ length: 4 }, () => row.appendChild(document.createElement('td')));
-    const name = document.createElement('input');
-    name.value = item.name;
-    name.maxLength = 120;
-    name.setAttribute('aria-label', 'Recording name');
-    name.onchange = async () => {
-      const value = name.value.trim() || item.name;
-      name.disabled = true;
-      button.disabled = true;
-      try {
-        if (item.saved) await request(item, 'PATCH', { name: value });
-        item.name = value;
-      } catch {
-        message.textContent = 'Name could not be saved. Please try again.';
-      } finally {
-        name.value = item.name;
-        name.disabled = false;
-        button.disabled = false;
-      }
-    };
+    const name = document.createElement('span');
+    name.textContent = 'Brady';
     cells[0].append(name);
-    cells[1].textContent = new Date(item.start).toLocaleString();
+    cells[1].textContent = new Date(item.start).toLocaleString('en-US', {
+      timeZone: 'America/Los_Angeles', timeZoneName: 'short'
+    });
     const audio = document.createElement('audio');
     audio.controls = true;
     audio.src = item.url;
@@ -90,7 +75,6 @@
     remove.onclick = async () => {
       remove.disabled = true;
       button.disabled = true;
-      name.disabled = true;
       try {
         // Delete even after a failed save response: the upload may have succeeded.
         await request(item, 'DELETE');
@@ -99,7 +83,6 @@
       } catch {
         message.textContent = 'Could not delete the recording. Please try again.';
         remove.disabled = false;
-        name.disabled = false;
       } finally { button.disabled = false; }
     };
     cells[3].append(remove);
@@ -111,7 +94,6 @@
         button.disabled = true;
         retry.disabled = true;
         remove.disabled = true;
-        name.disabled = true;
         try {
           await save(item);
           showCurrent(item);
@@ -120,7 +102,6 @@
           message.textContent = 'Save failed. Keep this page open and retry.';
           retry.disabled = false;
           remove.disabled = false;
-          name.disabled = false;
         } finally { button.disabled = false; }
       };
       cells[0].append(retry);
@@ -160,7 +141,7 @@
       const capture = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       recorder = capture;
       const chunks = [];
-      const item = { id: crypto.randomUUID(), name: 'Recording', start: new Date().toISOString(), saved: false };
+      const item = { id: crypto.randomUUID(), name: 'Brady', start: new Date().toISOString(), saved: false };
       let failed = false;
       capture.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
       capture.onerror = () => { failed = true; stop(); };
